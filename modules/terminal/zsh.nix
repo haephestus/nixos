@@ -19,7 +19,7 @@
       # rebuild system and home manager  
       rebuild = "sudo nixos-rebuild switch --flake .#harbinger";
       test-build = "sudo nixos-rebuild build --flake .#harbinger";
-      rehome = "home-manager -f /etc/nixos/home-manager/home.nix switch";
+      rehome = "nix run home-manager/master -- switch --flake .#harbinger";
       find = ''$ nix run "github:thiagokokada/nix-alien#nix-alien-lda" -- '';
       list-system = "sudo nix-env -p /nix/var/nix/profiles/system --list-generations";
       delete-system = "sudo nix-env -p /nix/var/nix/profiles/system --delete-generations";

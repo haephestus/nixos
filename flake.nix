@@ -7,11 +7,14 @@
     home-manager.url = "github:nix-community/home-manager/master";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
+    # lazyvim
+    lazyvim.url = "github:pfassina/lazyvim-nix";
+
     # NVF
     nvf.url = "github:notashelf/nvf";
   };
 
-  outputs = { self, nixpkgs, home-manager, nvf, ... }:
+  outputs = { self, nixpkgs, home-manager, nvf, lazyvim, ... }:
     let
       lib = nixpkgs.lib;
       system = "x86_64-linux";
@@ -34,8 +37,14 @@
         harbinger = home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           # home-manager configuration file
-          modules = [ ./home-manager/home.nix ];
+          extraSpecialArgs = {lazyvim = lazyvim;};
+
+          modules = [
+	          lazyvim.homeManagerModules.default
+            ./home-manager/home.nix 
+          ];
         };
+        home-manager.backupFileExtension = "backup";
       };
     };
 }

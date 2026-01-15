@@ -11,13 +11,15 @@
       libc
       zlib
       libffi
+      zstd
 
       # --- Rust toolchain libraries ---
       rustc
       cargo
 
       # --- Java and Gradle native dependencies ---
-      openjdk
+      openjdk17
+      openjdk21
       fontconfig
       freetype
       xorg.libX11
@@ -57,7 +59,12 @@
       libuv
       ncurses
       gperf
-
+ 
+      # LazyVim Runtime Utilities
+      ripgrep
+      nodejs
+      fd
+ 
       # --- Fonts ----
       #fontconfig
       #freetype

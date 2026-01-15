@@ -108,17 +108,10 @@
     # minecraft
     prismlauncher
     # Basic Build & System Tools
-    openjdk21
-    openjdk17
     python312
     ntfs3g
     sqlite
-    cargo
-    unzip
-    zstd
     wget
-    curl
-    gcc
 
     # Browsers
     brave
@@ -131,11 +124,7 @@
     git
     gh
 
-    # LazyVim Runtime Utilities
-    ripgrep
-    nodejs
-    fd
-  ];
+ ];
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.

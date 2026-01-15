@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lazyvim, ... }:
 
 {
   # Home Manager needs a bit of information about you and the paths it should
@@ -6,7 +6,10 @@
   home.username = "harbinger";
   home.homeDirectory = "/home/harbinger";
 
-  imports = [ ../modules/terminal/default.nix ];
+  imports = [ 
+    ../modules/terminal/default.nix
+    ../modules/editors/nvim.nix
+  ];
 
   # This value determines the Home Manager release that your configuration is
   # compatible with. This helps avoid breakage when a new Home Manager release
@@ -57,10 +60,10 @@
   # plain files is through 'home.file'.
   home.file = {
     # manage neovim config
-    ".config/nvim" = {
-      source = ../dotfiles/nvim;
-      recursive = true;
-    };
+    #".config/nvim" = {
+    # source = ../dotfiles/nvim;
+    #  recursive = true;
+    #};
 
     # # Building this configuration will create a copy of 'dotfiles/screenrc' in
     # # the Nix store. Activating the configuration will then make '~/.screenrc' a
