@@ -4,7 +4,7 @@
 
     settings = {
       # font-family = "undecided";
-      font-size = 12;
+      font-size = 14;
       theme = "TokyoNight Storm";
       # gtk-tabs-location = "hidden";
     };

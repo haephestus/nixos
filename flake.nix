@@ -8,19 +8,28 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     # lazyvim
-    lazyvim.url = "github:pfassina/lazyvim-nix";
+    lazyvim.url = "github:pfassina/lazyvim-nix/v15.13.0"; # Pin to v15.13.0
 
     # NVF
     nvf.url = "github:notashelf/nvf";
   };
 
-  outputs = { self, nixpkgs, home-manager, nvf, lazyvim, ... }:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      home-manager,
+      nvf,
+      lazyvim,
+      ...
+    }:
     let
       lib = nixpkgs.lib;
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
       customNeovim = nvf.lib.neovimConfiguration { inherit pkgs; };
-    in {
+    in
+    {
       # nixos configuration entry point
       # 'nixos-rebuild switch --flake .#hosthame'
       nixosConfigurations = {
@@ -37,11 +46,13 @@
         harbinger = home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           # home-manager configuration file
-          extraSpecialArgs = {lazyvim = lazyvim;};
+          extraSpecialArgs = {
+            lazyvim = lazyvim;
+          };
 
           modules = [
-	          lazyvim.homeManagerModules.default
-            ./home-manager/home.nix 
+            lazyvim.homeManagerModules.default
+            ./home-manager/home.nix
           ];
         };
         home-manager.backupFileExtension = "backup";
