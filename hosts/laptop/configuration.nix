@@ -11,7 +11,7 @@
 
     # configuration for desktop environment
     ../../modules/desktop/gnome.nix
-    
+
     # configurations for nix-ld and nix-alien
     ../../modules/tools/nix-ld.nix
 
@@ -23,7 +23,12 @@
   ];
 
   # Enable flakes
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
+
+  documentation.dev.enable = false;
 
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
@@ -65,13 +70,20 @@
   };
 
   # Allowed nix users
-  nix.settings.trusted-users = [ " root" "harbinger" ];
+  nix.settings.trusted-users = [
+    " root"
+    "harbinger"
+  ];
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.harbinger = {
     isNormalUser = true;
     description = "harbinger";
-    extraGroups = [ "networkmanager" "wheel" "adbusers" ];
+    extraGroups = [
+      "networkmanager"
+      "wheel"
+      "adbusers"
+    ];
   };
 
   #***********************************************************************
@@ -81,7 +93,7 @@
   #***********************************************************************
 
   #adb setup
-  programs.adb.enable = true;
+  # programs.adb.enable = true;
 
   # I use zsh btw
   environment.shells = with pkgs; [ zsh ];
@@ -95,7 +107,7 @@
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
 
-  # fonts 
+  # fonts
   fonts.packages = with pkgs; [ nerd-fonts.fira-code ];
 
   nixpkgs.config.android_sdk.accept_license = true;
@@ -108,7 +120,7 @@
     # minecraft
     prismlauncher
     # Basic Build & System Tools
-    python312
+    python313
     ntfs3g
     sqlite
     wget
@@ -124,7 +136,7 @@
     git
     gh
 
- ];
+  ];
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.

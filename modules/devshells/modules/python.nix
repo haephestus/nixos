@@ -42,14 +42,52 @@ in
     inherit (baseLDenv) NIX_LD NIX_LD_LIBRARY_PATH;
   };
 
-  flask = pkgs.mkShell {
+  fastapi = pkgs.mkShell {
     buildInputs =
       baseBuildInputs
       ++ (with pkgs; [
-        python312Packages.flask
+        watchman
+        postgrest
+        postgresql
+        virtualenv
+        tailwindcss_4
+        playwright-driver.browsers
+
+        python312Packages.jinja2
+        python312Packages.asyncpg
         python312Packages.fastapi
+        python312Packages.slowapi
+        python312Packages.playwright
+        python312Packages.apscheduler
+        python312Packages.fastapi-cli
+        python312Packages.itsdangerous
+        python312Packages.beautifulsoup4
+        python312Packages.python-dateutil
+        python312Packages.python-multipart
       ]);
-    shellHook = commonShellHook;
+    shellHook = commonShellHook + ''
+      export PGDATA=$PWD/.postgres
+      export PGHOST=$PWD/.postgres
+
+      export PLAYWRIGHT_BROWSERS_PATH=${pkgs.playwright-driver.browsers}
+      export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true
+      export PLAYWRIGHT_HOST_PLATFORM_OVERIDE="ubunut-24.04"
+
+      # Create the lock file directory postgres expects
+      mkdir -p $PWD/.postgres/run
+      export PGDATA=$PWD/.postgres
+      export PGUSER=$(whoami)
+
+      if [ ! -f $PGDATA/PG_VERSION ]; then
+        echo "Initializing PostgreSQL..."
+        initdb --auth=trust --no-locale --encoding=UTF8
+      fi
+
+      pg_ctl status -o "-k $PWD/.postgres/run" || \
+      pg_ctl start -o "-k $PWD/.postgres/run -h \"\"" -l $PGDATA/postgres.log
+
+      createdb pixelparty 2>/dev/null || true
+    '';
     inherit (baseLDenv) NIX_LD NIX_LD_LIBRARY_PATH;
   };
 

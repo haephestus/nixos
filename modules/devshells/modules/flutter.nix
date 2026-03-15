@@ -29,6 +29,7 @@ in
       androidPkgs.androidsdk
       pkgs.openjdk17
       pkgs.flutter332
+      pkgs.dart
       pkgs.gradle
       pkgs.clang
       pkgs.cmake

@@ -12,6 +12,9 @@
 
     # NVF
     nvf.url = "github:notashelf/nvf";
+
+    # ngrok
+    ngrok.url = "github:ngrok/ngrok-nix";
   };
 
   outputs =
@@ -21,6 +24,7 @@
       home-manager,
       nvf,
       lazyvim,
+      ngrok,
       ...
     }:
     let
@@ -48,11 +52,13 @@
           # home-manager configuration file
           extraSpecialArgs = {
             lazyvim = lazyvim;
+            ngrok = ngrok;
           };
 
           modules = [
             lazyvim.homeManagerModules.default
             ./home-manager/home.nix
+            ./modules/tools/ngrok.nix
           ];
         };
         home-manager.backupFileExtension = "backup";

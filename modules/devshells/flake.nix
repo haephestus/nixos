@@ -3,10 +3,13 @@
   description = "An experimental devshell for my dev-environments";
 
   # define the inputs that i will use to define the where to draw the pkgs
-  inputs = { nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable"; };
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+  };
 
   # what i want the pkgs to do
-  outputs = { self, nixpkgs }:
+  outputs =
+    { self, nixpkgs }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -24,7 +27,8 @@
       jsshells = import ./modules/jsshells.nix { inherit pkgs; };
       delphi = import ./modules/delphi.nix { inherit pkgs; };
 
-    in {
+    in
+    {
       devShells = {
         ${system} = {
           # TODO: add a default shell so that direnv stops complaining
@@ -48,7 +52,7 @@
           play = play.play;
           pyml = pyshells.pyml;
           insight = python.insight;
-          flask = python.flask;
+          fastapi = python.fastapi;
           pysh = pyshells.pyshell;
           pyfl = pyshells.pyflask;
 

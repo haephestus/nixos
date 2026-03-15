@@ -16,8 +16,9 @@
       vi = "nvim";
       ll = "ls -l";
 
-      # rebuild system and home manager  
+      # rebuild system and home manager
       rebuild = "sudo nixos-rebuild switch --flake .#harbinger";
+      upgrade = "sudo nixos-rebuild switch --flake .#harbinger --upgrade";
       test-build = "sudo nixos-rebuild build --flake .#harbinger";
       rehome = "nix run home-manager/master -- switch --flake .#harbinger";
       find = ''$ nix run "github:thiagokokada/nix-alien#nix-alien-lda" -- '';
@@ -30,11 +31,18 @@
     history.size = 2000;
     history.ignoreAllDups = true;
     history.path = "$HOME/.zsh_history";
-    history.ignorePatterns = [ "rm *" "pkill *" "cp *" ];
+    history.ignorePatterns = [
+      "rm *"
+      "pkill *"
+      "cp *"
+    ];
 
     oh-my-zsh = {
       enable = true;
-      plugins = [ "git" "direnv" ];
+      plugins = [
+        "git"
+        "direnv"
+      ];
       theme = "jonathan";
     };
   };

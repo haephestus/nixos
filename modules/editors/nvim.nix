@@ -26,12 +26,21 @@
           installDependencies = true;
           installRuntimeDependencies = true;
         };
+        jinj = {
+          enable = true;
+          installDependencies = true;
+          installRuntimeDependencies = true;
+        };
         typescript = {
           enable = true;
           installDependencies = true;
           installRuntimeDependencies = true;
         };
         java = {
+          enable = true;
+          installDependencies = true;
+        };
+        kotlin = {
           enable = true;
           installDependencies = true;
         };
@@ -52,6 +61,7 @@
 
       # formatters
       google-java-format
+      prettier
       pyright
       black
       isort
