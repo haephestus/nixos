@@ -4,14 +4,24 @@ let
     platformVersions = [
       "33"
       "34"
+      "35"
+      "36"
     ];
     buildToolsVersions = [
       "33.0.0"
       "34.0.0"
+      "35.0.0"
+      "36.0.0"
     ];
     includeNDK = true;
-    ndkVersions = [ "25.1.8937393" ];
+    ndkVersions = [
+      "25.1.8937393"
+      "29.0.14206865"
+
+    ];
+    cmakeVersions = [ "3.22.1" ];
     includeSources = false;
+
     includeSystemImages = false;
     includeEmulator = false;
     abiVersions = [
@@ -22,13 +32,18 @@ let
   };
 in
 {
+  build = pkgs.buildFHSenv {
+    name = "flutter-env";
+
+  };
+
   flutter = pkgs.mkShell {
     name = "flutter-cli-shell";
     buildInputs = [
       # Android / Flutter tooling
       androidPkgs.androidsdk
       pkgs.openjdk17
-      pkgs.flutter332
+      pkgs.flutter338
       pkgs.dart
       pkgs.gradle
       pkgs.clang
@@ -59,20 +74,19 @@ in
       pkgs.libjpeg
       # OpenGL/Mesa
       pkgs.mesa
-      pkgs.mesa.drivers
       pkgs.libGL
       pkgs.libglvnd
       pkgs.vulkan-loader
       pkgs.vulkan-validation-layers
       # X11 libraries
-      pkgs.xorg.libX11
-      pkgs.xorg.libXext
-      pkgs.xorg.libXi
-      pkgs.xorg.libXrandr
-      pkgs.xorg.libXinerama
-      pkgs.xorg.libXcursor
-      pkgs.xorg.libXrender
-      pkgs.xorg.libxcb
+      pkgs.libX11
+      pkgs.libXext
+      pkgs.libXi
+      pkgs.libXrandr
+      pkgs.libXinerama
+      pkgs.libXcursor
+      pkgs.libXrender
+      pkgs.libxcb
       pkgs.libxkbcommon
       # Themes
       pkgs.adwaita-icon-theme
@@ -86,7 +100,10 @@ in
     ANDROID_HOME = "${androidPkgs.androidsdk}/libexec/android-sdk";
     ANDROID_NDK_ROOT = "${androidPkgs.androidsdk}/libexec/android-sdk/ndk/25.1.8937393";
     JAVA_HOME = "${pkgs.openjdk17}";
-    NIXPKGS_ACCEPT_ANDROID_SDK_LICENSE = "1";
+
+    NIX_SHELL = "1";
+    GRADLE_OPTS = "-Dorg.gradle.project.android.aapt2FromMavenOverride=${pkgs.aapt}/bin/aapt2";
+
     # GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx2048m";
     CHROME_EXECUTABLE = "chromium";
     shellHook = ''
@@ -113,11 +130,11 @@ in
           pkgs.mesa.drivers
           pkgs.libGL
           pkgs.libglvnd
-          pkgs.xorg.libX11
-          pkgs.xorg.libXext
-          pkgs.xorg.libXi
-          pkgs.xorg.libXrandr
-          pkgs.xorg.libXcursor
+          pkgs.libX11
+          pkgs.libXext
+          pkgs.libXi
+          pkgs.libXrandr
+          pkgs.libXcursor
           pkgs.fontconfig
           pkgs.freetype
           pkgs.icu

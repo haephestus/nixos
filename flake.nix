@@ -40,7 +40,11 @@
         harbinger = lib.nixosSystem {
           inherit system;
           # main configuration file
-          modules = [ ./hosts/laptop/configuration.nix ];
+          modules = [
+            ngrok.nixosModules.ngrok
+            ./hosts/laptop/configuration.nix
+            ./modules/tools/ngrok.nix
+          ];
         };
       };
 
@@ -52,13 +56,11 @@
           # home-manager configuration file
           extraSpecialArgs = {
             lazyvim = lazyvim;
-            ngrok = ngrok;
           };
 
           modules = [
             lazyvim.homeManagerModules.default
             ./home-manager/home.nix
-            ./modules/tools/ngrok.nix
           ];
         };
         home-manager.backupFileExtension = "backup";

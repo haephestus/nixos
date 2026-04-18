@@ -14,8 +14,10 @@
       system = "x86_64-linux";
       pkgs = import nixpkgs {
         inherit system;
-        config.allowUnfree = true;
-        config.android_sdk.accept_license = true;
+        config = {
+          android_sdk.accept_license = true;
+          allowUnfree = true;
+        };
       };
 
       cshells = import ./modules/cshells.nix { inherit pkgs; };

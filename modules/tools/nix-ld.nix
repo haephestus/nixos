@@ -22,13 +22,13 @@
       openjdk21
       fontconfig
       freetype
-      xorg.libX11
-      xorg.libXext
-      xorg.libXrender
-      xorg.libxcb
-      xorg.libXrandr
-      xorg.libXinerama
-      xorg.libXcursor
+      libX11
+      libXext
+      libXrender
+      libxcb
+      libXrandr
+      libXinerama
+      libXcursor
       libGL
       mesa
       openssl
@@ -70,7 +70,7 @@
       #freetype
 
       # --- Miscellaneous libraries ----
-      xorg.libxcb
+      libxcb
       libxkbcommon
     ];
   };

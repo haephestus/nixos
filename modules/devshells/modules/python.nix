@@ -23,6 +23,28 @@ let
       stdenv.cc.cc.lib
       openssl
       zlib
+      pkgs.glib
+      pkgs.nss
+      pkgs.nspr
+      pkgs.atk
+      pkgs.cups
+      pkgs.dbus
+      pkgs.expat
+      pkgs.libdrm
+      pkgs.xorg.libX11
+      pkgs.xorg.libXcomposite
+      pkgs.xorg.libXdamage
+      pkgs.xorg.libXext
+      pkgs.xorg.libXfixes
+      pkgs.xorg.libXrandr
+      pkgs.xorg.libxcb
+      pkgs.mesa
+      pkgs.gtk3
+      pkgs.pango
+      pkgs.cairo
+      pkgs.alsa-lib
+      pkgs.at-spi2-atk
+      pkgs.at-spi2-core
     ];
   };
 
@@ -31,9 +53,8 @@ let
     echo "Python312 dev shell"
 
     # export runtime linker explicitly
-    export NIX_LD=$(nix eval --raw nixpkgs#stdenv.cc.cc.lib)/lib/ld-linux-x86-64.so.2
-    export LD_LIBRARY_PATH=$(nix eval --raw nixpkgs#stdenv.cc.cc.lib)/lib:$LD_LIBRARY_PATH
-  '';
+    export NIX_LD_LIBRARY_PATH="$NIX_LD_LIBRARY_PATH"
+    export LD_LIBRARY_PATH="$NIX_LD_LIBRARY_PATH:$LD_LIBRARY_PATH"  '';
 in
 {
   python = pkgs.mkShell {

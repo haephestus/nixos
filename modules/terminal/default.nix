@@ -4,5 +4,6 @@
     ./ghostty.nix
     ./zellij.nix
     ./zsh.nix
+    ./starship.nix
   ];
 }

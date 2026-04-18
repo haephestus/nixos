@@ -1,11 +1,16 @@
-{ programs.zellij = {
-  enable = true;
+{
+  programs.zellij = {
+    enable = true;
 
-  # enableZshIntegration = true;
+    # enableZshIntegration = true;
 
-  settings = {
+    settings = {
       simplified_ui = true;
-      theme="tokyo-night-dark";
+      theme = "tokyo-night-dark";
+
+      show_status_bar = false;
+
+      pane_frames = false;
     };
-  }; 
+  };
 }

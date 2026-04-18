@@ -51,16 +51,19 @@
   i18n.defaultLocale = "en_ZA.UTF-8";
 
   # Enable CUPS to print documents.
-  services.printing.enable = true;
 
   # Enable sound with pipewire.
-  services.pulseaudio.enable = false;
   security.rtkit.enable = true;
-  services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
+
+  services = {
+    printing.enable = true;
+    pulseaudio.enable = false;
+    pipewire = {
+      enable = true;
+      alsa.enable = true;
+      alsa.support32Bit = true;
+      pulse.enable = true;
+    };
     # If you want to use JACK applications, uncomment this
     #jack.enable = true;
 
@@ -98,17 +101,20 @@
   # I use zsh btw
   environment.shells = with pkgs; [ zsh ];
   users.defaultUserShell = pkgs.zsh;
-  programs.zsh.enable = true;
-
-  # direnv
-  programs.direnv.nix-direnv.enable = true;
-  programs.direnv.enable = true;
+  programs = {
+    zsh.enable = true;
+    direnv.nix-direnv.enable = true;
+    direnv.enable = true;
+  };
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
 
   # fonts
-  fonts.packages = with pkgs; [ nerd-fonts.fira-code ];
+  fonts.packages = with pkgs; [
+    nerd-fonts.departure-mono
+    nerd-fonts.fira-code
+  ];
 
   nixpkgs.config.android_sdk.accept_license = true;
   # List packages installed in system profile. To search, run:

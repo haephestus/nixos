@@ -1,7 +1,14 @@
-{ pkgs ? import <nixpkgs> }:
+{
+  pkgs ? import <nixpkgs>,
+}:
 
 let
-  inherit (pkgs) stdenv lib openssl zlib;
+  inherit (pkgs)
+    stdenv
+    lib
+    openssl
+    zlib
+    ;
 
   baseBuildInputs = with pkgs; [
     openjdk21 # for tools
@@ -12,13 +19,21 @@ let
 
   baseLDenv = {
     NIX_LD = lib.fileContents "${stdenv.cc}/nix-support/dynamic-linker";
-    NIX_LD_LIBRARY_PATH = lib.makeLibraryPath [ stdenv.cc.cc.lib openssl zlib ];
+    NIX_LD_LIBRARY_PATH = lib.makeLibraryPath [
+      stdenv.cc.cc.lib
+      openssl
+      zlib
+    ];
   };
-in {
+in
+{
   mc_dev = pkgs.mkShell {
     name = "minecraft-java-mod-devshell";
-    buildInputs = baseBuildInputs
-      ++ (with pkgs; [ jetbrains.idea-community prismlauncher nix-ld ]);
+    buildInputs =
+      baseBuildInputs
+      ++ (with pkgs; [
+        nix-ld
+      ]);
 
     shellHook = ''
       echo "[✔] Java Minecraft Modding Shell Ready"
@@ -36,4 +51,3 @@ in {
     inherit (baseLDenv) NIX_LD NIX_LD_LIBRARY_PATH;
   };
 }
-

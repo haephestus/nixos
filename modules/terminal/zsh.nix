@@ -38,12 +38,12 @@
     ];
 
     oh-my-zsh = {
-      enable = true;
+      enable = false;
       plugins = [
         "git"
         "direnv"
       ];
-      theme = "jonathan";
+      theme = "agnoster";
     };
   };
 }
