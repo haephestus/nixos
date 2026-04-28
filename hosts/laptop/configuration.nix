@@ -108,7 +108,10 @@
   };
 
   # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
+  nixpkgs.config = {
+    allowUnfree = true;
+    cudaSupport = true;
+  };
 
   # fonts
   fonts.packages = with pkgs; [
@@ -120,6 +123,9 @@
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
+    #clean up tools
+    nix-sweep
+    ollama
     ghostty
     zellij
     home-manager

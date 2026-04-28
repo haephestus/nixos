@@ -12,7 +12,7 @@ let
 
   baseBuildInputs = with pkgs; [
     python312
-    python312Packages.pip
+    python313Packages.pip
     gcc
     gnumake
   ];
@@ -74,17 +74,17 @@ in
         tailwindcss_4
         playwright-driver.browsers
 
-        python312Packages.jinja2
-        python312Packages.asyncpg
-        python312Packages.fastapi
-        python312Packages.slowapi
-        python312Packages.playwright
-        python312Packages.apscheduler
-        python312Packages.fastapi-cli
-        python312Packages.itsdangerous
-        python312Packages.beautifulsoup4
-        python312Packages.python-dateutil
-        python312Packages.python-multipart
+        python313Packages.jinja2
+        python313Packages.asyncpg
+        python313Packages.fastapi
+        python313Packages.slowapi
+        python313Packages.playwright
+        python313Packages.apscheduler
+        python313Packages.fastapi-cli
+        python313Packages.itsdangerous
+        python313Packages.beautifulsoup4
+        python313Packages.python-dateutil
+        python313Packages.python-multipart
       ]);
     shellHook = commonShellHook + ''
       export PGDATA=$PWD/.postgres
@@ -115,7 +115,7 @@ in
   insight = pkgs.mkShell {
     buildInputs =
       baseBuildInputs
-      ++ (with pkgs.python312Packages; [
+      ++ (with pkgs.python313Packages; [
         scikit-learn
         statsmodels
         matplotlib

@@ -5,7 +5,7 @@
   # Uncomment whichever IDEs you want. allowUnfree is already set in home.nix.
   home.packages = with pkgs; [
     # === Free ===
-    jetbrains.idea-community # IntelliJ IDEA Community
+    jetbrains.idea-oss # IntelliJ IDEA Community
     # jetbrains.pycharm-community  # PyCharm Community
     # jetbrains.rider-free         # Rider (free as of 2025)
 

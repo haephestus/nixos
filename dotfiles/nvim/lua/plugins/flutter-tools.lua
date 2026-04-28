@@ -24,14 +24,15 @@ return {
           auto_open_browser = false,
         },
         lsp = {
+          color = { enabled = true, virtual_text = true, virtual_text_str = "■" },
           on_attach = function(client, bufnr)
             -- You can add custom keymaps here
-            local opts = { noremap=true, silent=true, buffer=bufnr }
-            vim.keymap.set('n', '<leader>fr', "<cmd>FlutterRun<cr>", opts)
-            vim.keymap.set('n', '<leader>fd', "<cmd>FlutterDevices<cr>", opts)
-            vim.keymap.set('n', '<leader>fq', "<cmd>FlutterQuit<cr>", opts)
-            vim.keymap.set('n', '<leader>fl', "<cmd>FlutterReload<cr>", opts)
-            vim.keymap.set('n', '<leader>fp', "<cmd>FlutterOutlineToggle<cr>", opts)
+            local opts = { noremap = true, silent = true, buffer = bufnr }
+            vim.keymap.set("n", "<leader>fr", "<cmd>FlutterRun<cr>", opts)
+            vim.keymap.set("n", "<leader>fd", "<cmd>FlutterDevices<cr>", opts)
+            vim.keymap.set("n", "<leader>fq", "<cmd>FlutterQuit<cr>", opts)
+            vim.keymap.set("n", "<leader>fl", "<cmd>FlutterReload<cr>", opts)
+            vim.keymap.set("n", "<leader>fp", "<cmd>FlutterOutlineToggle<cr>", opts)
           end,
           settings = {
             dart = {

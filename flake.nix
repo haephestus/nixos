@@ -8,7 +8,7 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     # lazyvim
-    lazyvim.url = "github:pfassina/lazyvim-nix/v15.13.0"; # Pin to v15.13.0
+    lazyvim.url = "github:pfassina/lazyvim-nix/v15.15.0"; # Pin to v15.13.0
 
     # NVF
     nvf.url = "github:notashelf/nvf";

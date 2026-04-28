@@ -2,7 +2,7 @@
 
 let
   libstdcxx = pkgs.stdenv.cc.cc.lib;
-  python = pkgs.python312Full;
+  python = pkgs.python313;
 
   basepkgs = with pkgs; [
     zstd
@@ -11,18 +11,18 @@ let
     virtualenv
     playwright-driver.browsers
 
-    python312Packages.pydantic
-    python312Packages.requests
-    python312Packages.ipython
-    python312Packages.typer
-    python312Packages.rich
-    python312Packages.pip
+    python313Packages.pydantic
+    python313Packages.requests
+    python313Packages.ipython
+    python313Packages.typer
+    python313Packages.rich
+    python313Packages.pip
   ];
-in {
+in
+{
   pyshell = pkgs.mkShell {
     name = "pyshell";
-    buildInputs = basepkgs
-      ++ (with pkgs; [ python312Packages.pyside6 python312Packages.watchdog ]);
+    buildInputs = basepkgs ++ (with pkgs; [ python313Packages.watchdog ]);
     shellHook = ''
       export LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib:${pkgs.zstd}/lib:$LD_LIBRARY_PATH
       echo "🐍 General Python 3.12 Dev Shell Loaded"
@@ -34,7 +34,7 @@ in {
 
   pyflask = pkgs.mkShell {
     name = "pyflask";
-    buildInputs = basepkgs ++ (with pkgs; [ python312Packages.flask ]);
+    buildInputs = basepkgs ++ (with pkgs; [ python313Packages.flask ]);
     shellHook = ''
       export LD_LIBRARY_PATH=${libstdcxx}/lib:$LD_LIBRARY_PATH
       echo "🌐 Flask Webdev Python Shell Loaded"
@@ -46,20 +46,22 @@ in {
 
   pyml = pkgs.mkShell {
     name = "pyml";
-    buildInputs = basepkgs ++ (with pkgs; [
-      python312Packages.scikit-learn
-      python312Packages.statsmodels
-      python312Packages.torchvision
-      python312Packages.matplotlib
-      python312Packages.jupyterlab
-      python312Packages.notebook
-      python312Packages.opencv4
-      python312Packages.pytorch
-      python312Packages.seaborn
-      python312Packages.pandas
-      python312Packages.numpy
-      python312Packages.scipy
-    ]);
+    buildInputs =
+      basepkgs
+      ++ (with pkgs; [
+        python313Packages.scikit-learn
+        python313Packages.statsmodels
+        python313Packages.torchvision
+        python313Packages.matplotlib
+        python313Packages.jupyterlab
+        python313Packages.notebook
+        python313Packages.opencv4
+        python313Packages.pytorch
+        python313Packages.seaborn
+        python313Packages.pandas
+        python313Packages.numpy
+        python313Packages.scipy
+      ]);
     shellHook = ''
       export LD_LIBRARY_PATH=${libstdcxx}/lib:$LD_LIBRARY_PATH
       echo "🧠 Machine Learning Python Shell Loaded"
@@ -68,5 +70,15 @@ in {
       fi
     '';
   };
+  pycerebrum = pkgs.mkShell {
+    name = "pycerebrum";
+    buildInputs = basepkgs;
+    shellHook = ''
+      export LD_LIBRARY_PATH=${libstdcxx}/lib:${pkgs.zstd}/lib:$LD_LIBRARY_PATH
+      echo "🧠 Cerebrum-Daemon Shell Loaded"
+      if [ -f .direnv/python-3.13/bin/activate ]; then
+        source .direnv/python-3.13/bin/activate
+      fi
+    '';
+  };
 }
-

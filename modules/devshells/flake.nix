@@ -51,8 +51,8 @@
           del = delphi.delphi;
 
           # python development environments
-          play = play.play;
           pyml = pyshells.pyml;
+          cerebrum = pyshells.pycerebrum;
           insight = python.insight;
           fastapi = python.fastapi;
           pysh = pyshells.pyshell;
