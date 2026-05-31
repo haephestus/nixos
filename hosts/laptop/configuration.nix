@@ -58,6 +58,10 @@
   services = {
     printing.enable = true;
     pulseaudio.enable = false;
+    ollama = {
+      enable = true;
+      package = pkgs.ollama-cuda;
+    };
     pipewire = {
       enable = true;
       alsa.enable = true;
@@ -125,7 +129,6 @@
   environment.systemPackages = with pkgs; [
     #clean up tools
     nix-sweep
-    ollama
     ghostty
     zellij
     home-manager

@@ -1,21 +1,20 @@
 { config, pkgs, ... }:
 
 {
-  nixpkgs.config.allowUnsupportedSystem = true;
+  nixpkgs.config = {
+    allowUnfree = true;
 
-  # NVIDIA closed-source driver
+    cudaSupport = true;
+    cudaCapabilities = [ "6.1" ];
+  };
+
   hardware.nvidia = {
-    package = config.boot.kernelPackages.nvidiaPackages.production;
-    open = false; # closed-source for GTX 1050
+    package = config.boot.kernelPackages.nvidiaPackages.legacy_580;
+    open = false;
   };
 
   services.xserver.videoDrivers = [ "nvidia" ];
 
-  # CUDA packages (optional)
-  environment.systemPackages = with pkgs; [
-  ];
-
-  # Blacklist Nouveau
   boot.blacklistedKernelModules = [ "nouveau" ];
-}
 
+}
