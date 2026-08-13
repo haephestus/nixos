@@ -22,7 +22,7 @@ return {
       },
     },
     config = function(_, opts)
-      require("zaffron.todo-md").setup(opts)
+      require("todo-md").setup(opts)
     end,
     keys = {
       { "<leader>to", desc = "Open Todo (Floating)" },

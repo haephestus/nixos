@@ -1,0 +1,137 @@
+{
+  "mod": {
+    "prefix": "mod",
+    "body": [
+      "package ${1:com.example};",
+      "",
+      "import com.mojang.logging.LogUtils;",
+      "import net.minecraftforge.common.MinecraftForge;",
+      "import net.minecraftforge.eventbus.api.IEventBus;",
+      "import net.minecraftforge.fml.common.Mod;",
+      "import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;",
+      "import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;",
+      "import org.slf4j.Logger;",
+      "",
+      "@Mod(\"${2:modid}\")",
+      "public class ${3:ExampleMod} {",
+      "    public static final String MODID = \"${2:modid}\";",
+      "    public static final Logger LOGGER = LogUtils.getLogger();",
+      "",
+      "    public ${3:ExampleMod}() {",
+      "        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();",
+      "        modEventBus.addListener(this::commonSetup);",
+      "        MinecraftForge.EVENT_BUS.register(this);",
+      "    }",
+      "",
+      "    private void commonSetup(final FMLCommonSetupEvent event) {",
+      "        ${4}",
+      "    }",
+      "}"
+    ],
+    "description": "Forge 1.20.1 main mod class (@Mod + mod event bus)"
+  },
+  "subevent": {
+    "prefix": "subevent",
+    "body": [
+      "@SubscribeEvent",
+      "public void ${1:onEvent}(${2:SomeEvent} event) {",
+      "    ${3}",
+      "}"
+    ],
+    "description": "@SubscribeEvent handler (Forge event bus)"
+  },
+  "deferreg": {
+    "prefix": "deferreg",
+    "body": [
+      "public static final DeferredRegister<${1:Item}> ${2:ITEMS} = DeferredRegister.create(ForgeRegistries.${3:ITEMS}, MODID);"
+    ],
+    "description": "DeferredRegister declaration (Forge 1.20.1)"
+  },
+  "regobj": {
+    "prefix": "regobj",
+    "body": [
+      "public static final RegistryObject<${1:Item}> ${2:EXAMPLE_ITEM} = ${3:ITEMS}.register(\"${4:example_item}\", () -> new ${1:Item}(new Item.Properties()));"
+    ],
+    "description": "RegistryObject field for an item/block"
+  },
+  "blockreg": {
+    "prefix": "blockreg",
+    "body": [
+      "public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);",
+      "public static final DeferredRegister<BlockItem> BLOCK_ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);",
+      "",
+      "public static final RegistryObject<Block> ${1:EXAMPLE_BLOCK} = BLOCKS.register(\"${2:example_block}\", () -> new Block(BlockBehaviour.Properties.copy(Blocks.${3:STONE})));",
+      "public static final RegistryObject<BlockItem> ${1:EXAMPLE_BLOCK}_ITEM = BLOCK_ITEMS.register(\"${2:example_block}\", () -> new BlockItem(${1:EXAMPLE_BLOCK}.get(), new Item.Properties()));"
+    ],
+    "description": "Forge 1.20.1 block + block item registration"
+  },
+  "creativetab": {
+    "prefix": "creativetab",
+    "body": [
+      "public static final CreativeModeTab ${1:CREATIVE_TAB} = new CreativeModeTab(\"${2:tabname}\") {",
+      "    @Override",
+      "    public ItemStack makeIcon() {",
+      "        return new ItemStack(${3:Items.DIAMOND});",
+      "    }",
+      "};"
+    ],
+    "description": "Forge 1.20.1 creative mode tab"
+  },
+  "configspec": {
+    "prefix": "configspec",
+    "body": [
+      "public static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();",
+      "public static final ForgeConfigSpec.IntValue ${1:VALUE} = BUILDER.comment(\"${2:Description}\").defineInRange(\"${3:key}\", ${4:1}, ${5:0}, ${6:100});",
+      "public static final ForgeConfigSpec SPEC = BUILDER.build();"
+    ],
+    "description": "Forge 1.20.1 config (ForgeConfigSpec.Builder)"
+  },
+  "mixin": {
+    "prefix": "mixin",
+    "body": [
+      "@Mixin(${1:TargetClass}.class)",
+      "public abstract class ${2:TargetClass}Mixin {",
+      "    ${3}",
+      "}"
+    ],
+    "description": "Mixin class (Fabric / NeoForge)"
+  },
+  "inject": {
+    "prefix": "inject",
+    "body": [
+      "@Inject(method = \"${1:method}\", at = @At(\"HEAD\"))",
+      "private void ${2:modid}$on${3:Method}(CallbackInfo ci) {",
+      "    ${4}",
+      "}"
+    ],
+    "description": "Mixin @Inject (non-cancellable)"
+  },
+  "injectc": {
+    "prefix": "injectc",
+    "body": [
+      "@Inject(method = \"${1:method}\", at = @At(\"HEAD\"), cancellable = true)",
+      "private void ${2:modid}$on${3:Method}(CallbackInfo ci) {",
+      "    if (${4:condition}) {",
+      "        ci.cancel();",
+      "    }",
+      "}"
+    ],
+    "description": "Mixin @Inject (cancellable)"
+  },
+  "accessor": {
+    "prefix": "accessor",
+    "body": [
+      "@Accessor(\"${1:fieldName}\")",
+      "${2:Type} get${3:Field}();"
+    ],
+    "description": "Mixin @Accessor getter"
+  },
+  "invoker": {
+    "prefix": "invoker",
+    "body": [
+      "@Invoker(\"${1:methodName}\")",
+      "void invoke${2:Method}(${3:args});"
+    ],
+    "description": "Mixin @Invoker"
+  }
+}

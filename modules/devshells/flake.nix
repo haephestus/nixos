@@ -23,9 +23,7 @@
       cshells = import ./modules/cshells.nix { inherit pkgs; };
       flutter = import ./modules/flutter.nix { inherit pkgs; };
       java = import ./modules/java.nix { inherit pkgs; };
-      play = import ./modules/play.nix { inherit pkgs; };
-      pyshells = import ./modules/pyshell.nix { inherit pkgs; };
-      python = import ./modules/python.nix { inherit pkgs; };
+      py = import ./modules/python.nix { inherit pkgs; };
       jsshells = import ./modules/jsshells.nix { inherit pkgs; };
       delphi = import ./modules/delphi.nix { inherit pkgs; };
 
@@ -42,25 +40,31 @@
           clang = cshells.clang-shell;
 
           # flutter development environments
-          flutter = flutter.flutter;
+          inherit (flutter) flutter;
 
           # java development environments
-          mc = java.mc_dev;
-
+          inherit (java)
+            mc_1_20_1 # explicit 1.20.1 (JDK17)
+            mc_latest # newer Minecraft (JDK21 default)
+            java17 # plain Java 17 + jdtls (nvim/CLI)
+            java21 # plain Java 21 + jdtls (nvim/CLI)
+            ;
           # delphi development environments
           del = delphi.delphi;
 
           # python development environments
-          pyml = pyshells.pyml;
-          cerebrum = pyshells.pycerebrum;
-          insight = python.insight;
-          fastapi = python.fastapi;
-          pysh = pyshells.pyshell;
-          pyfl = pyshells.pyflask;
+          inherit (py)
+            pyml # machine learning dev env
+            pycerebrum # cerebrum dev env
+            insight # data science dev env
+            fastapi # fastapi dev env
+            pysh # general python shell
+            pyfl # flask dev env
+            steward # steward dev env
+            ;
 
           # javascript developement environments
-          bun = jsshells.bun;
-          nodejs_22 = jsshells.nodejs_22;
+          inherit (jsshells) nodejs_22 bun;
         };
       };
     };

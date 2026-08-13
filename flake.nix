@@ -1,7 +1,7 @@
 {
   inputs = {
     # Nixppkgs
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     # Home-manager
     home-manager.url = "github:nix-community/home-manager/master";
@@ -10,11 +10,6 @@
     # lazyvim
     lazyvim.url = "github:pfassina/lazyvim-nix/v15.15.0"; # Pin to v15.13.0
 
-    # NVF
-    nvf.url = "github:notashelf/nvf";
-
-    # ngrok
-    ngrok.url = "github:ngrok/ngrok-nix";
   };
 
   outputs =
@@ -22,18 +17,17 @@
       self,
       nixpkgs,
       home-manager,
-      nvf,
       lazyvim,
-      ngrok,
       ...
     }:
     let
       lib = nixpkgs.lib;
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
-      customNeovim = nvf.lib.neovimConfiguration { inherit pkgs; };
     in
     {
+      # Set the backup file extension for home-manager file changes.
+      home-manager.backupFileExtension = "backup";
       # nixos configuration entry point
       # 'nixos-rebuild switch --flake .#hosthame'
       nixosConfigurations = {
@@ -41,9 +35,9 @@
           inherit system;
           # main configuration file
           modules = [
-            ngrok.nixosModules.ngrok
+            #ngrok.nixosModules.ngrok
+            #./modules/tools/ngrok.nix
             ./hosts/laptop/configuration.nix
-            ./modules/tools/ngrok.nix
           ];
         };
       };
@@ -63,7 +57,6 @@
             ./home-manager/home.nix
           ];
         };
-        home-manager.backupFileExtension = "backup";
       };
     };
 }

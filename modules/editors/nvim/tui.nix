@@ -1,3 +1,4 @@
+# THIS IS A HOME MANAGER MODULE
 {
   config,
   pkgs,
@@ -8,7 +9,7 @@
 {
   programs.lazyvim = {
     enable = true;
-    configFiles = ../../dotfiles/nvim;
+    configFiles = ./dotfiles;
 
     extras = {
       lang = {

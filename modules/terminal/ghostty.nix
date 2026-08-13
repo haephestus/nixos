@@ -8,6 +8,7 @@
       font-family = "DepartureMono Nerd Font";
       theme = "TokyoNight Storm";
       # gtk-tabs-location = "hidden";
+      keybind = [ ];
     };
   };
 }

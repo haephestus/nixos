@@ -5,5 +5,6 @@
     ./zellij.nix
     ./zsh.nix
     ./starship.nix
+    ./direnv.nix
   ];
 }

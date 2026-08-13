@@ -72,6 +72,7 @@ in
       pkgs.freetype
       pkgs.libpng
       pkgs.libjpeg
+      pkgs.libsecret
       # OpenGL/Mesa
       pkgs.mesa
       pkgs.libGL
