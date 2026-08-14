@@ -101,7 +101,7 @@
       package = pkgs.ollama-cuda;
       environmentVariables = {
         # --- memory (from before) ---
-        OLLAMA_KEEP_ALIVE = "30s";
+        OLLAMA_KEEP_ALIVE = "2m";
         OLLAMA_MAX_LOADED_MODELS = "1";
         OLLAMA_NUM_PARALLEL = "1";
         # --- GPU sharing on a 3GB card ---
@@ -110,6 +110,7 @@
         # so Ollama shares politely & doesn't OOM the GPU
         OLLAMA_FLASH_ATTENTION = "1"; # enables KV-cache quant below
         OLLAMA_KV_CACHE_TYPE = "q8_0"; # ~half the KV-cache RAM/VRAM, near-lossless
+        LLAMA_ARG_FIT = "off";
       };
     };
     pipewire = {
