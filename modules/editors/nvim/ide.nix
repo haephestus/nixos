@@ -45,7 +45,7 @@
 
       # ── Font ─────────────────────────────────────────────────────────────────
       font = {
-        #   normal = [ "MonoLisa Nerd Font" ];  # list of family strings or {family,style}
+        normal = [ "DaddyTimeMono Nerd Font" ]; # list of family strings or {family,style}
         size = 12.0; # required
         #    width = 0;                        # font width override (integer)
         #    hinting = "full";                 # "none" | "slight" | "full"

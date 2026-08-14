@@ -68,7 +68,7 @@ in
     # Docs: https://opencode.ai/docs/config/
     settings = {
       # Default model; small_model is used for cheap tasks like title gen.
-      model = "ollama/qwen2.5-coder:3b";
+      model = "ollama/gemma4:e2b-it-q4_K_M";
       # small_model = "ollama/qwen2.5-coder:3b";
 
       # Provider definitions. options: baseURL, apiKey, headers, timeout, ...
@@ -78,8 +78,8 @@ in
           npm = "@ai-sdk/openai-compatible";
           options.baseURL = "http://localhost:11434/v1";
           models = {
-            "qwen2.5-coder:3b" = {
-              name = "Qwen2.5 Coder 3B (local)";
+            "gemma4:e2b-it-q4_K_M" = {
+              name = "Gemma4:e2b (local)";
             };
           };
         };

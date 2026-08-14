@@ -27,23 +27,14 @@
     # weekly nix-sweep store cleanup
     ../../modules/services/nix-sweep.nix
   ];
-
+  # Dedupe identical store files via hardlinks after every build (nix.conf
+  # auto-optimise-store is currently false; this prevents slow store bloat).
+  nix.settings.auto-optimise-store = true;
   # Enable flakes
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"
   ];
-
-  # Dedupe identical store files via hardlinks after every build (nix.conf
-  # auto-optimise-store is currently false; this prevents slow store bloat).
-  nix.settings.auto-optimise-store = true;
-
-  # Cap the systemd journal so logs can't fill the disk (was growing to ~2 GiB).
-  services.journald.extraConfig = ''
-    SystemMaxUse=200M
-    MaxRetentionSec=30d
-  '';
-
   documentation.dev.enable = false;
 
   # --- Consolidated Boot Block ---
@@ -77,11 +68,6 @@
       ];
     };
   };
-
-  services.udev.extraRules = ''
-    KERNEL=="uinput", GROUP="uinput", MODE="0660"
-  '';
-
   # Set your time zone.
   time.timeZone = "Africa/Johannesburg";
 
@@ -92,6 +78,16 @@
 
   # Enable sound with pipewire.
   security.rtkit.enable = true;
+
+  # Cap the systemd journal so logs can't fill the disk (was growing to ~2 GiB).
+  services.journald.extraConfig = ''
+    SystemMaxUse=200M
+    MaxRetentionSec=30d
+  '';
+
+  services.udev.extraRules = ''
+    KERNEL=="uinput", GROUP="uinput", MODE="0660"
+  '';
 
   services = {
     printing.enable = true;
@@ -167,6 +163,7 @@
   fonts.packages = with pkgs; [
     nerd-fonts.departure-mono
     nerd-fonts.fira-code
+    nerd-fonts.daddy-time-mono
   ];
 
   nixpkgs.config.android_sdk.accept_license = true;
