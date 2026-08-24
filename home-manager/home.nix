@@ -12,6 +12,7 @@
     ../modules/editors/nvim/tui.nix
     # ../modules/editors/jetbrains.nix
     ../modules/ai/opencode.nix
+    ../home-manager/hyprland.nix
   ];
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
@@ -31,18 +32,8 @@
 
   nixpkgs.config.allowUnfree = true;
 
-  dconf = {
-    enable = true;
-    settings = {
-      "org/gnome/shell" = {
-        disable-user-extensions = false;
-        enabled-extensions = [
-          pkgs.gnomeExtensions.blur-my-shell.extensionUuid
-          pkgs.gnomeExtensions.worksets.extensionUuid
-        ];
-      };
-    };
-  };
+  # Lets Home Manager manage GTK/dconf settings for apps that use them.
+  dconf.enable = true;
 
   # The home.packages option allows you to install Nix packages into your
   # environment.

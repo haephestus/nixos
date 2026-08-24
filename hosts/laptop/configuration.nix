@@ -10,7 +10,7 @@
     ./hardware-configuration.nix
 
     # configuration for desktop environment
-    ../../modules/desktop/gnome.nix
+    ../../modules/desktop/hyprland.nix
 
     # configurations for nix-ld and nix-alien
     ../../modules/tools/nix-ld.nix
@@ -24,17 +24,22 @@
     # agentic ai
     ../../modules/ai/coding-agents.nix
 
+    # steward daemon settings
+    ../../modules/services/tailscale.nix
+
     # weekly nix-sweep store cleanup
     ../../modules/services/nix-sweep.nix
   ];
   # Dedupe identical store files via hardlinks after every build (nix.conf
   # auto-optimise-store is currently false; this prevents slow store bloat).
-  nix.settings.auto-optimise-store = true;
   # Enable flakes
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
+  nix.settings = {
+    auto-optimise-store = true;
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
+  };
   documentation.dev.enable = false;
 
   # --- Consolidated Boot Block ---
@@ -43,7 +48,16 @@
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
     };
-    kernelModules = [ "uinput" ];
+    kernelModules = [
+      "uinput"
+      # Explicit NVIDIA modules: nixpkgs only adds these when
+      # services.xserver.enable is set, but GNOME/COSMIC run on Wayland
+      # without an X server. nvidia_drm is required for the GBM backend
+      # (modeset/fbdev) to create /dev/dri nodes.
+      "nvidia"
+      "nvidia_modeset"
+      "nvidia_drm"
+    ];
   };
 
   # --- Stylus / drawing tablet support -----------------------------------
@@ -74,24 +88,28 @@
   # Select internationalisation properties.
   i18n.defaultLocale = "en_ZA.UTF-8";
 
-  # Enable CUPS to print documents.
-
   # Enable sound with pipewire.
   security.rtkit.enable = true;
 
   # Cap the systemd journal so logs can't fill the disk (was growing to ~2 GiB).
-  services.journald.extraConfig = ''
-    SystemMaxUse=200M
-    MaxRetentionSec=30d
-  '';
-
-  services.udev.extraRules = ''
-    KERNEL=="uinput", GROUP="uinput", MODE="0660"
-  '';
-
   services = {
+    journald.extraConfig = ''
+      SystemMaxUse=200M
+      MaxRetentionSec=30d
+    '';
+    udev.extraRules = ''
+      KERNEL=="uinput", GROUP="uinput", MODE="0660"
+    '';
+
     printing.enable = true;
     pulseaudio.enable = false;
+
+    # thumbnailers for Thunar's file previews
+    tumbler.enable = true;
+
+    # drive/phone mounting in Thunar (Devices sidebar) — the udisks2-backed
+    # virtual filesystem layer COSMIC used to provide implicitly.
+    gvfs.enable = true;
     ollama = {
       enable = true;
       package = pkgs.ollama-cuda;
@@ -116,6 +134,7 @@
       pulse.enable = true;
     };
   };
+
   systemd.services.ollama.serviceConfig = {
     MemoryHigh = "9G"; # soft: kernel throttles/reclaims Ollama before it swaps
     MemoryMax = "11G"; # hard ceiling; OOM-kills Ollama, not your whole session
@@ -169,6 +188,10 @@
   nixpkgs.config.android_sdk.accept_license = true;
 
   # List packages installed in system profile.
+  # Ownership rule: binaries that are pure apps (ghostty, neovide, zellij)
+  # live HERE; Home Manager only customizes their configs via xdg.configFile.
+  # Exception: neovim — HM's lazyvim wrapper is inseparable from its config,
+  # so it stays HM-owned. Do not re-add plain neovim here (duplicate).
   environment.systemPackages = with pkgs; [
     # dev
     zellij
@@ -180,7 +203,6 @@
     # system manager
     gh
     git
-    neovim
     neovide
     nix-sweep
     home-manager
@@ -191,6 +213,14 @@
     brave
     ntfs3g
     prismlauncher
+
+    # file management (formerly implicit via COSMIC's cosmic-files)
+    thunar # file manager
+    swayimg # wayland-native image viewer
+
+    # desktop utilities (formerly implicit via COSMIC)
+    pavucontrol # audio device/output mixer — right-click waybar volume module
+    btop # system monitor: cpu/mem/disk/processes — Super+U
   ];
 
   networking = {

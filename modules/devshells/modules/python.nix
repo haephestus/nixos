@@ -51,6 +51,7 @@ let
     virtualenv
     gcc
     gnumake
+    tailwindcss_4
 
     python313Packages.fastapi
     python313Packages.uvicorn

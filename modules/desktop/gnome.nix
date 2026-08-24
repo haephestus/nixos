@@ -1,10 +1,11 @@
 { config, pkgs, ... }:
 
 {
-  # Enable the X11 windowing system.
-  services.xserver.enable = true;
-
   # Enable the GNOME Desktop Environment.
+  # GDM + mutter run natively on Wayland; no X server is required.
+  # NOTE: NVIDIA kernel modules (nvidia/nvidia_modeset/nvidia_drm) are gated on
+  # services.xserver.enable in nixpkgs — they are added explicitly in
+  # hosts/laptop/configuration.nix (boot.kernelModules) instead.
   services.displayManager.gdm.enable = true;
   services.desktopManager.gnome.enable = true;
 

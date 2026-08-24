@@ -4,10 +4,12 @@
 # https://home-manager.dev/manual/unstable/options/home-manager/programs/neovide.html
 #
 # Every option is present below for documentation. Unused options are commented
-# out; only `enable`, `package`, and `settings` are active.
+# out.
 #
-# The module writes:
-#   programs.neovide.settings → ~/.config/neovide/config.toml
+# OWNERSHIP NOTE: the neovide BINARY is owned by the system profile
+# (hosts/laptop/configuration.nix), NOT by programs.neovide here. This module
+# writes ~/.config/neovide/config.toml directly — the same file
+# programs.neovide.settings would produce — via pkgs.formats.toml.
 #
 # The `settings` value is free-form TOML (type: TOML value). The keys available
 # in it come from Neovide itself, not home-manager:
@@ -18,22 +20,22 @@
   ...
 }:
 {
-  programs.neovide = {
-    # ── programs.neovide.enable ──────────────────────────────────────────────
-    # type: boolean   default: false
-    # Whether to enable Neovide. Installs pkgs.neovide and writes config.toml.
-    enable = true;
+  # ── programs.neovide.enable ──────────────────────────────────────────────
+  # type: boolean   default: false
+  # Whether to enable Neovide. Installs pkgs.neovide and writes config.toml.
+  # REPLACED by the system profile owning the binary (see ownership note).
 
-    # ── programs.neovide.package ─────────────────────────────────────────────
-    # type: null or package   default: pkgs.neovide
-    # Override the neovide package.
-    package = pkgs.neovide;
+  # ── programs.neovide.package ─────────────────────────────────────────────
+  # type: null or package   default: pkgs.neovide
+  # Override the neovide package.
+  # REPLACED by the system profile owning the binary (see ownership note).
 
-    # ── programs.neovide.settings ────────────────────────────────────────────
-    # type: TOML value   default: { }
-    # Written to ~/.config/neovide/config.toml. All keys below are the Neovide
-    # config-file options — uncomment what you need.
-    settings = {
+  # ── programs.neovide.settings ────────────────────────────────────────────
+  # type: TOML value   default: { }
+  # Written to ~/.config/neovide/config.toml. All keys below are the Neovide
+  # config-file options — uncomment what you need.
+  xdg.configFile."neovide/config.toml".source =
+    (pkgs.formats.toml { }).generate "neovide-config" {
       # ── Window / layout ──────────────────────────────────────────────────────
       # frame = "full";            # "full" | "thin" | "none"
       # maximized = false;         # mutually exclusive with `grid` and `size`
@@ -60,7 +62,7 @@
       # ── Box drawing (fractions / gaps in box glyphs) ─────────────────────────
       # box-drawing = {
       #   mode = "native";       # "font-glyph" | "native" | "selected-native"
-      #   # selected = "🮐🮑🮒"; # only for "selected-native"
+      #   # selected = "🮐🮑🮒"; # only for "selected-native"
       #   sizes = {
       #     default = [ 2 4 ];  # thin & thick widths in px for all font sizes
       #     # "12" = [ 1 2 ];   # override per font size (px) — numeric keys need quotes
@@ -98,9 +100,11 @@
       # system-quit-hotkey = "cmd+q";
       # system-minimize-hotkey = "cmd+m";
       # system-fullscreen-hotkey = "cmd+ctrl+f";
-      # system-show-all-tabs-hotkey = "cmd+shift+e";
-      # system-tab-prev-hotkey = "cmd+shift+[";
-      # system-tab-next-hotkey = "cmd+shift+]";
+      # system-show-all-tabs = false;
+      # system-show-all-tabs-keybinding = "cmd+shift+e";
+      # system-tab-prev = false;
+      # system-tab-prev-keybinding = "cmd+shift+[";
+      # system-tab-next = false;
+      # system-tab-next-keybinding = "cmd+shift+]";
     };
-  };
 }
