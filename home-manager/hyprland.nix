@@ -171,6 +171,7 @@ in
       # core scrolling layout (niri-style column tape); everything else
       # stays on dwindle.
       workspace = [
+        "1, layout:scrolling"
         "3, layout:scrolling"
       ];
 
