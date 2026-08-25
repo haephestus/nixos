@@ -37,23 +37,49 @@ let
   # GTK theme variant, mako notifications.
   themeName = "storm";
 
-  tokyoNight = {
-    storm = {
-      bg = "24283b"; base = "1a1b26"; fg = "c0caf5"; dim = "565f89";
-      blue = "7aa2f7"; cyan = "7dcfff"; sel = "343a55";
-      warn = "e0af68"; err = "f7768e"; gtkTweaks = "storm"; gtkSuffix = "-Storm";
-    };
-    moon = {
-      bg = "222436"; base = "1b1d2b"; fg = "c8d3f5"; dim = "585e76";
-      blue = "8caaee"; cyan = "7dcfff"; sel = "2f334d";
-      warn = "ffc777"; err = "ff757f"; gtkTweaks = "moon"; gtkSuffix = "-Moon";
-    };
-    night = {
-      bg = "1a1b26"; base = "16161e"; fg = "c0caf5"; dim = "565f89";
-      blue = "7aa2f7"; cyan = "7dcfff"; sel = "292e42";
-      warn = "e0af68"; err = "f7768e"; gtkTweaks = ""; gtkSuffix = "";
-    };
-  }.${themeName};
+  tokyoNight =
+    {
+      storm = {
+        bg = "24283b";
+        base = "1a1b26";
+        fg = "c0caf5";
+        dim = "565f89";
+        blue = "7aa2f7";
+        cyan = "7dcfff";
+        sel = "343a55";
+        warn = "e0af68";
+        err = "f7768e";
+        gtkTweaks = "storm";
+        gtkSuffix = "-Storm";
+      };
+      moon = {
+        bg = "222436";
+        base = "1b1d2b";
+        fg = "c8d3f5";
+        dim = "585e76";
+        blue = "8caaee";
+        cyan = "7dcfff";
+        sel = "2f334d";
+        warn = "ffc777";
+        err = "ff757f";
+        gtkTweaks = "moon";
+        gtkSuffix = "-Moon";
+      };
+      night = {
+        bg = "1a1b26";
+        base = "16161e";
+        fg = "c0caf5";
+        dim = "565f89";
+        blue = "7aa2f7";
+        cyan = "7dcfff";
+        sel = "292e42";
+        warn = "e0af68";
+        err = "f7768e";
+        gtkTweaks = "";
+        gtkSuffix = "";
+      };
+    }
+    .${themeName};
 
   # Tokyo Night GTK theme (thunar, dialogs, waypaper — all GTK apps).
   # Built from upstream with sassc; variant follows the THEME SWITCH above.
@@ -66,7 +92,10 @@ let
       rev = "6c340e058e84c1975a038a8e5d1e384477225dc0";
       hash = "sha256-7H2n9wTaW8Db1RejWK071ITV1j5KIuzfql0Tx9WT6zM=";
     };
-    nativeBuildInputs = [ pkgs.sassc pkgs.glib ];
+    nativeBuildInputs = [
+      pkgs.sassc
+      pkgs.glib
+    ];
     dontBuild = true;
     postPatch = "patchShebangs themes/install.sh";
     installPhase = ''
@@ -176,6 +205,8 @@ in
         # cross physical monitors (movefocus cannot leave the screen)
         "$mod SHIFT, H, focusmonitor, l"
         "$mod SHIFT, L, focusmonitor, r"
+        "$mod SHIFT, J, focusmonitor, d"
+        "$mod SHIFT, K, focusmonitor, u"
 
         # split control — togglesplit/swapsplit dispatchers were REMOVED in
         # Hyprland 0.54; layoutmsg is the only way now. Requires
@@ -190,13 +221,13 @@ in
         # layoutmsg is layout-scoped: these only do something on the
         # scrolling workspace; on dwindle workspaces they no-op with a log
         # line. Syntax per wiki 0.54+ Scrolling Layout page.
-        "$mod, period, layoutmsg, move +col"      # scroll tape right
-        "$mod, comma, layoutmsg, move -col"       # scroll tape left
+        "$mod, period, layoutmsg, move +col" # scroll tape right
+        "$mod, comma, layoutmsg, move -col" # scroll tape left
         "$mod CTRL, period, layoutmsg, colresize +conf" # cycle wider preset
-        "$mod CTRL, comma, layoutmsg, colresize -conf"  # cycle narrower preset
-        "$mod CTRL, H, layoutmsg, swapcol l"      # shift column left
-        "$mod CTRL, L, layoutmsg, swapcol r"      # shift column right
-        "$mod, O, layoutmsg, promote"             # pop window into own column
+        "$mod CTRL, comma, layoutmsg, colresize -conf" # cycle narrower preset
+        "$mod CTRL, H, layoutmsg, swapcol l" # shift column left
+        "$mod CTRL, L, layoutmsg, swapcol r" # shift column right
+        "$mod, O, layoutmsg, promote" # pop window into own column
 
         # workspaces: numbers plus Ctrl+J/K (bare J/K are focus now)
         # j = next, k = previous
@@ -216,12 +247,11 @@ in
         "$mod SHIFT, 5, movetoworkspace, 5"
 
         # mouse wheel through workspaces
-        "$mod, mouse_down, workspace, e+1"
-        "$mod, mouse_up, workspace, e-1"
+        "$mod ALT, K, workspace, e+1"
+        "$mod ALT, J, workspace, e-1"
 
         # keybind viewer — quickshell widget reading live binds
         "$mod, slash, exec, quickshell ipc call keybinds toggle"
-
 
         "$mod SHIFT, W, exec, waypaper"
 
@@ -261,7 +291,10 @@ in
       # hyprpaper starts here; mako does NOT (services.mako owns it as a
       # managed user unit — starting both would fight over the socket).
       # quickshell = the dashboard (Super+D toggles it via its IPC handler).
-      exec-once = [ "hyprpaper" "quickshell" ];
+      exec-once = [
+        "hyprpaper"
+        "quickshell"
+      ];
 
       # dashboard toggle (quickshell IpcHandler target "dashboard") is in
       # the main bind list above.
@@ -412,7 +445,7 @@ in
       # fuzzel colors are RRGGBBAA — alpha LAST (opposite of Hyprland's
       # format). Don't "fix" one to match the other.
       colors = {
-        background = "${tokyoNight.base}f0";   # palette base, translucent
+        background = "${tokyoNight.base}f0"; # palette base, translucent
         text = "${tokyoNight.fg}ff";
         match = "${tokyoNight.cyan}ff";
         selection = "${tokyoNight.sel}ff";
@@ -765,16 +798,16 @@ in
   # switch, or fail like the -b backup error). We create it once if
   # absent; afterwards waypaper owns it.
   home.activation.seedWaypaper = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    if [ ! -f "$HOME/.config/waypaper/config.ini" ]; then
-      mkdir -p "$HOME/.config/waypaper"
-      cat > "$HOME/.config/waypaper/config.ini" <<'EOF'
-[Settings]
-language = en
-folder = /home/harbinger/Pictures/tokyonight
-backend = hyprpaper
-monitor = All
-EOF
-    fi
+        if [ ! -f "$HOME/.config/waypaper/config.ini" ]; then
+          mkdir -p "$HOME/.config/waypaper"
+          cat > "$HOME/.config/waypaper/config.ini" <<'EOF'
+    [Settings]
+    language = en
+    folder = /home/harbinger/Pictures/tokyonight
+    backend = hyprpaper
+    monitor = All
+    EOF
+        fi
   '';
 
   # Dark-mode signal for Chromium/Electron apps (Brave, etc.) — they ignore
@@ -805,8 +838,9 @@ EOF
     quickshell # Qt/QML shell toolkit — dashboard (Super+D)
     grim # screenshot capture
     slurp # region selection for screenshots
-    gpu-screen-recorder # screen recording — NOTE: wf-recorder is unusable
-                        # in this nixpkgs rev (fails to build vs ffmpeg 8)
+    gpu-screen-recorder
+    # screen recording — NOTE: wf-recorder is unusable
+    # in this nixpkgs rev (fails to build vs ffmpeg 8)
     mako # notification daemon (formerly implicit via COSMIC)
 
     # Screenshot helper: `hypr-screenshot` = full screen,

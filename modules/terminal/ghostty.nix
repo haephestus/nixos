@@ -10,7 +10,7 @@
     # trailing semicolons, no quotes around values. Quoting makes the
     # parser treat them as part of the value (theme/font silently fail).
     # font-family = undecided
-    font-size = 12
+    font-size = 10
     font-family = DaddyTimeMono Nerd Font
     theme = TokyoNight Storm
     # translucency — lets the compositor blur show through (decoration.blur)
