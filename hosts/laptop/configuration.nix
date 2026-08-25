@@ -221,6 +221,8 @@
     # desktop utilities (formerly implicit via COSMIC)
     pavucontrol # audio device/output mixer — right-click waybar volume module
     btop # system monitor: cpu/mem/disk/processes — Super+U
+    brightnessctl # screen backlight control — XF86MonBrightness keys
+    playerctl # playback control for MPRIS apps — XF86AudioPlay keys
   ];
 
   networking = {

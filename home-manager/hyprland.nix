@@ -180,6 +180,10 @@ in
         # general preserve_split below, or toggling does nothing.
         "$mod, T, layoutmsg, togglesplit"
 
+        # resize MODE: Super+R enters a dedicated submap (extraConfig at
+        # bottom) — arrows/HJKL resize, Esc/Enter exits.
+        "$mod, R, submap, resize"
+
         # --- scrolling-layout controls (workspace 3) ---
         # layoutmsg is layout-scoped: these only do something on the
         # scrolling workspace; on dwindle workspaces they no-op with a log
@@ -215,7 +219,7 @@ in
         # keybind cheat sheet (Omarchy-style overlay)
         "$mod, slash, exec, hypr-keybinds"
 
-        # wallpaper picker
+
         "$mod SHIFT, W, exec, waypaper"
 
         # system monitor (cpu/mem/disk/processes)
@@ -230,7 +234,17 @@ in
 
         # workspace overview — niri-style scroll overview (plugin above)
         "$mod, Tab, scrolloverview:overview, toggle all"
+
+        # dashboard toggle (quickshell IpcHandler target "dashboard")
+        # NOTE: no -c flag — shell.qml IS the default config; -c selects a
+        # config DIRECTORY and would fail with "could not find"
+        "$mod, D, exec, quickshell ipc call dashboard toggle"
       ];
+
+      # NOTE: media/brightness/playback/wireless keys are NOT in the bind
+      # list above — HM normalizes unknown bind-like keys to plain `bind`,
+      # destroying bindel/bindl (repeat + locked) semantics. They live in
+      # extraConfig below instead.
 
       # tap Super (press and release, no other key) opens the launcher —
       # COSMIC muscle memory. bindr fires on key RELEASE.
@@ -243,8 +257,11 @@ in
       # pyprland daemon removed — replaced by the scrolloverview plugin.
       # hyprpaper starts here; mako does NOT (services.mako owns it as a
       # managed user unit — starting both would fight over the socket).
-      exec-once = [ "hyprpaper" ];
+      # quickshell = the dashboard (Super+D toggles it via its IPC handler).
+      exec-once = [ "hyprpaper" "quickshell" ];
 
+      # dashboard toggle (quickshell IpcHandler target "dashboard") is in
+      # the main bind list above.
       bindm = [
         "$mod, mouse:272, movewindow"
         "$mod, mouse:273, resizewindow"
@@ -299,6 +316,9 @@ in
       # and boolean rules need explicit on/off values.
       windowrule = [
         "match:class ^(hypr-keybinds)$, float on, pin on, size 980 720"
+        # thunar's rename dialog: float + center on the focused screen
+        # instead of spawning at the side / wrong monitor
+        "match:class ^(thunar)$, match:title ^Rename, float on, center on"
         # NOTE: no blur rules needed — decoration.blur applies to ALL
         # windows by default in 0.56+; per-window opt-OUT is `no_blur on`.
       ];
@@ -349,6 +369,22 @@ in
 
       # blur the bar (it's translucent; blur makes it glassy)
       layerrule = blur on, match:namespace waybar
+
+      # --- media/brightness/playback/wireless keys ---
+      # In extraConfig because HM normalizes settings.bindel/bindl to plain
+      # `bind`, destroying repeat/locked semantics.
+      bindel = , XF86AudioRaiseVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+
+      bindel = , XF86AudioLowerVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%-
+      bindl  = , XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
+      bindl  = , XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+      bindel = , XF86MonBrightnessUp, exec, brightnessctl set +5%
+      bindel = , XF86MonBrightnessDown, exec, brightnessctl set 5%-
+      bindl  = , XF86AudioPlay, exec, playerctl play-pause
+      bindl  = , XF86AudioPause, exec, playerctl pause
+      bindl  = , XF86AudioNext, exec, playerctl next
+      bindl  = , XF86AudioPrev, exec, playerctl previous
+      bindl  = , XF86WLAN, exec, nmcli radio wifi toggle
+      bindl  = , XF86RFKill, exec, sh -c 'if [ "$(nmcli radio wifi)" = enabled ]; then nmcli radio wifi off; else nmcli radio wifi on; fi; if bluetoothctl show | grep -q "Powered: yes"; then bluetoothctl power off; else bluetoothctl power on; fi'
     '';
   };
 
@@ -420,9 +456,151 @@ in
     '';
   };
 
-  # Notifications — palette-matched.
-  # NOTE: modern HM moved all styling under settings.* with kebab-case
-  # keys mirroring mako's own config file names.
+  # quickshell dashboard — audio devices/volume/mute panel (Super+D).
+  # v0: talks to PipeWire through wpctl/pactl CLI (Process objects) rather
+  # than quickshell's Pipewire service API — less elegant, far fewer
+  # unknown-API failure modes. Iterate visually later.
+  xdg.configFile."quickshell/shell.qml".text = ''
+    //@ pragma UseQApplication
+    import QtQuick
+    import QtQuick.Controls
+    import Quickshell
+    import Quickshell.Io
+
+    ShellRoot {
+        id: root
+        property bool shown: false
+        property real volume: 0.4
+        property bool muted: false
+        property string defaultSink: ""
+        property var sinks: []
+
+        IpcHandler {
+            function toggle() { root.shown = !root.shown }
+            target: "dashboard"
+        }
+
+        // ---- state refresh -------------------------------------------------
+        Process {
+            id: volProc
+            command: ["sh", "-c",
+                "echo VOL=$(wpctl get-volume @DEFAULT_AUDIO_SINK@); echo SINK=$(pactl get-default-sink 2>/dev/null)"]
+            stdout: SplitParser {
+                onRead: data => {
+                    if (data.startsWith("VOL=")) {
+                        root.muted = data.includes("MUTED");
+                        const v = parseFloat(data.slice(4).replace("[MUTED]", "").trim());
+                        if (!isNaN(v)) { root.volume = v; slider.value = v; }
+                    } else if (data.startsWith("SINK=")) {
+                        root.defaultSink = data.slice(5).trim();
+                    }
+                }
+            }
+        }
+
+        Process {
+            id: sinksAll
+            command: ["sh", "-c", "pactl -f json list sinks 2>/dev/null || true"]
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    try {
+                        const arr = JSON.parse(this.text);
+                        root.sinks = arr.map(s => ({
+                            name: s.name,
+                            desc: s.description || s.name,
+                            active: s.name === root.defaultSink
+                        }));
+                    } catch (e) { root.sinks = []; }
+                }
+            }
+        }
+
+        function run(cmd) { runner.command = ["sh", "-c", cmd]; runner.running = true; }
+        function refresh() { volProc.running = true; sinksAll.running = true; }
+
+        Timer { interval: 2000; running: root.shown; repeat: true; onTriggered: root.refresh() }
+        onShownChanged: if (root.shown) root.refresh()
+
+        Process { id: runner; stdout: StdioCollector { onStreamFinished: root.refresh() } }
+
+        // ---- window --------------------------------------------------------
+        PanelWindow {
+            visible: root.shown
+            anchors { right: true; top: true; bottom: true }
+            width: 360
+            color: "transparent"
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 8
+                radius: 12
+                color: "#ee1a1b26"
+                border.color: "#557aa2f7"
+
+                Column {
+                    anchors.fill: parent
+                    anchors.margins: 18
+                    spacing: 14
+
+                    Text { color: "#c0caf5"; font.pixelSize: 16; font.bold: true
+                           text: "dashboard" }
+                    Rectangle { width: parent.width; height: 1; color: "#337aa2f7" }
+
+                    Text { color: "#565f89"; text: "OUTPUT — " + root.defaultSink }
+                    Slider {
+                        id: slider
+                        width: parent.width
+                        from: 0; to: 1
+                        onMoved: root.run("wpctl set-volume @DEFAULT_AUDIO_SINK@ " + value.toFixed(2))
+                    }
+                    Row {
+                        spacing: 10
+                        Button { text: root.muted ? "unmute" : "mute";
+                                 onClicked: root.run("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle") }
+                        Button { text: "−";  onClicked: root.run("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-") }
+                        Button { text: "+";  onClicked: root.run("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+") }
+                        Button { text: "refresh"; onClicked: root.refresh() }
+                    }
+                    Text { color: root.muted ? "#f7768e" : "#c0caf5"
+                           text: "volume " + Math.round(root.volume * 100) + "%" + (root.muted ? "  [MUTED]" : "") }
+
+                    Rectangle { width: parent.width; height: 1; color: "#337aa2f7" }
+                    Text { color: "#565f89"; text: "DEVICES" }
+
+                    Repeater {
+                        model: root.sinks
+                        delegate: Rectangle {
+                            width: parent.width
+                            height: 34
+                            radius: 6
+                            color: modelData.active ? "#333473a5" : "#22242036"
+                            Row {
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.left: parent.left
+                                anchors.leftMargin: 10
+                                spacing: 8
+                                Text { color: modelData.active ? "#7dcfff" : "#565f89"
+                                       text: modelData.active ? "▸" : " " }
+                                Text { width: 280; elide: Text.ElideRight
+                                       color: modelData.active ? "#c0caf5" : "#a9b1d6"
+                                       text: modelData.desc }
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: root.run("pactl set-default-sink " + modelData.name)
+                            }
+                        }
+                    }
+
+                    Item { height: 1; width: 1 }
+                    Text { color: "#565f89"; font.pixelSize: 11
+                           text: "esc anywhere / Super+D to close" }
+                }
+            }
+        }
+    }
+  '';
+
   # Waypaper defaults — SEED-ONLY. waypaper REWRITES this file whenever
   # you pick a wallpaper, so HM must not manage it as a link target
   # (declarative management would clobber your runtime choice every
@@ -441,6 +619,14 @@ EOF
     fi
   '';
 
+  # Dark-mode signal for Chromium/Electron apps (Brave, etc.) — they ignore
+  # gtk-theme and read org.gnome.desktop.interface color-scheme instead.
+  # Without this they render white toolbars on a dark desktop.
+  dconf.settings."org/gnome/desktop/interface" = {
+    color-scheme = "prefer-dark";
+    gtk-theme = gtkThemeDir;
+  };
+
   services.mako = {
     enable = true;
     settings = {
@@ -458,6 +644,7 @@ EOF
     wl-clipboard # wayland clipboard utilities (replaces xclip workflows)
     waypaper # wallpaper picker GUI
     hyprpaper # wallpaper daemon — waypaper writes its conf and drives it
+    quickshell # Qt/QML shell toolkit — dashboard (Super+D)
     grim # screenshot capture
     slurp # region selection for screenshots
     gpu-screen-recorder # screen recording — NOTE: wf-recorder is unusable
@@ -663,11 +850,11 @@ EOF
         min-height: 0;
       }
       window#waybar {
-        /* GTK CSS: translucency via 8-digit hex (#RRGGBBAA), NOT
-           rgba(<hex>, x) — GTK parses rgba() as DECIMAL channels only */
-        background: #${tokyoNight.base}D1;
+        /* GTK3 CSS has no 8-digit hex — translucency uses alpha():
+           alpha(#RRGGBB, fraction). rgba(<hex>, x) also invalid. */
+        background: alpha(#${tokyoNight.base}, 0.82);
         color: #${tokyoNight.fg};
-        border-bottom: 1px solid #${tokyoNight.blue}59;
+        border-bottom: 1px solid alpha(#${tokyoNight.blue}, 0.35);
       }
       #workspaces button {
         padding: 0 10px;
@@ -679,11 +866,11 @@ EOF
       }
       #workspaces button.active,
       #workspaces button.focused {
-        color: ${tokyoNight.base};
+        color: #${tokyoNight.base};
         background: #${tokyoNight.blue};
       }
       #workspaces button:hover {
-        background: #${tokyoNight.blue}40;
+        background: alpha(#${tokyoNight.blue}, 0.25);
         color: #${tokyoNight.fg};
       }
       #cpu, #memory, #disk, #network, #battery, #pulseaudio, #tray,
@@ -691,7 +878,7 @@ EOF
         padding: 0 8px;
         margin: 3px 2px;
         border-radius: 6px;
-        background: #${tokyoNight.bg}A6;
+        background: alpha(#${tokyoNight.bg}, 0.65);
       }
       #battery.warning {
         color: #${tokyoNight.warn};
