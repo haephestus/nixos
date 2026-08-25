@@ -223,6 +223,8 @@
     btop # system monitor: cpu/mem/disk/processes — Super+U
     brightnessctl # screen backlight control — XF86MonBrightness keys
     playerctl # playback control for MPRIS apps — XF86AudioPlay keys
+    pulseaudio # CLIENT binaries only (pactl etc.) — PipeWire stays the server;
+               # needed by scripts/tools that query audio state via pactl
   ];
 
   networking = {

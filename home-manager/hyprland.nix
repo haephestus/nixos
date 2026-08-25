@@ -163,13 +163,15 @@ in
         "$mod, F, fullscreen"
         "$mod, M, fullscreen" # COSMIC habit
 
-        # focus — arrows AND vim keys
+        # focus — full vim semantics: h/j/k/l + arrows
         "$mod, left, movefocus, l"
         "$mod, right, movefocus, r"
         "$mod, up, movefocus, u"
         "$mod, down, movefocus, d"
         "$mod, H, movefocus, l"
         "$mod, L, movefocus, r"
+        "$mod, J, movefocus, d"
+        "$mod, K, movefocus, u"
 
         # cross physical monitors (movefocus cannot leave the screen)
         "$mod SHIFT, H, focusmonitor, l"
@@ -196,9 +198,10 @@ in
         "$mod CTRL, L, layoutmsg, swapcol r"      # shift column right
         "$mod, O, layoutmsg, promote"             # pop window into own column
 
-        # workspaces: numbers plus J/K (j=down/next, k=up/prev)
-        "$mod, J, workspace, e+1"
-        "$mod, K, workspace, e-1"
+        # workspaces: numbers plus Ctrl+J/K (bare J/K are focus now)
+        # j = next, k = previous
+        "$mod CTRL, J, workspace, e+1"
+        "$mod CTRL, K, workspace, e-1"
         "$mod, 1, workspace, 1"
         "$mod, 2, workspace, 2"
         "$mod, 3, workspace, 3"
@@ -216,8 +219,8 @@ in
         "$mod, mouse_down, workspace, e+1"
         "$mod, mouse_up, workspace, e-1"
 
-        # keybind cheat sheet (Omarchy-style overlay)
-        "$mod, slash, exec, hypr-keybinds"
+        # keybind viewer — quickshell widget reading live binds
+        "$mod, slash, exec, quickshell ipc call keybinds toggle"
 
 
         "$mod SHIFT, W, exec, waypaper"
@@ -310,12 +313,7 @@ in
         preserve_split = true;
       };
 
-      # The keybind cheat sheet opens as a pinned floating overlay.
-      # Matches the --class/--title passed by the hypr-keybinds script.
-      # NOTE: Hyprland 0.53+ windowrule syntax — matchers take `match:`
-      # and boolean rules need explicit on/off values.
       windowrule = [
-        "match:class ^(hypr-keybinds)$, float on, pin on, size 980 720"
         # thunar's rename dialog: float + center on the focused screen
         # instead of spawning at the side / wrong monitor
         "match:class ^(thunar)$, match:title ^Rename, float on, center on"
@@ -466,6 +464,9 @@ in
     import QtQuick.Controls
     import Quickshell
     import Quickshell.Io
+    import Quickshell.Wayland
+    // WlrLayershell.keyboardFocus lives in Quickshell.Wayland (verified
+    // against the shipped qmltypes; there is no .WlrLayershell import)
 
     ShellRoot {
         id: root
@@ -489,7 +490,8 @@ in
                 onRead: data => {
                     if (data.startsWith("VOL=")) {
                         root.muted = data.includes("MUTED");
-                        const v = parseFloat(data.slice(4).replace("[MUTED]", "").trim());
+                        // wpctl prints "Volume: 0.45" — strip prefix before parse
+                        const v = parseFloat(data.slice(4).replace("[MUTED]", "").replace("Volume:", "").trim());
                         if (!isNaN(v)) { root.volume = v; slider.value = v; }
                     } else if (data.startsWith("SINK=")) {
                         root.defaultSink = data.slice(5).trim();
@@ -551,15 +553,53 @@ in
                         id: slider
                         width: parent.width
                         from: 0; to: 1
+                        // hand-styled — stock Controls render with a light
+                        // palette that clashes with everything
+                        background: Rectangle {
+                            x: slider.leftPadding
+                            y: slider.topPadding + slider.availableHeight / 2 - height / 2
+                            width: slider.availableWidth
+                            height: 6
+                            radius: 3
+                            color: "#33242036"
+                            Rectangle {
+                                width: slider.visualPosition * parent.width
+                                height: parent.height
+                                radius: 3
+                                color: "#ff7aa2f7"
+                            }
+                        }
+                        handle: Rectangle {
+                            x: slider.leftPadding + slider.visualPosition * (slider.availableWidth - width)
+                            y: slider.topPadding + slider.availableHeight / 2 - height / 2
+                            width: 16; height: 16; radius: 8
+                            color: "#ee7aa2f7"
+                            border.color: "#1a1b26"; border.width: 2
+                        }
                         onMoved: root.run("wpctl set-volume @DEFAULT_AUDIO_SINK@ " + value.toFixed(2))
                     }
                     Row {
                         spacing: 10
-                        Button { text: root.muted ? "unmute" : "mute";
-                                 onClicked: root.run("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle") }
-                        Button { text: "−";  onClicked: root.run("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-") }
-                        Button { text: "+";  onClicked: root.run("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+") }
-                        Button { text: "refresh"; onClicked: root.refresh() }
+                        Repeater {
+                            model: [
+                                { t: root.muted ? "unmute" : "mute",
+                                  a: "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle" },
+                                { t: "−", a: "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-" },
+                                { t: "+", a: "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+" }
+                            ]
+                            delegate: Rectangle {
+                                width: btnText.width + 24
+                                height: 30
+                                radius: 6
+                                color: ma.pressed ? "#557aa2f7" : "#22242036"
+                                border.color: "#447aa2f7"
+                                Text { id: btnText; anchors.centerIn: parent
+                                       color: "#c0caf5"; text: modelData.t }
+                                MouseArea { id: ma; anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.run(modelData.a) }
+                            }
+                        }
                     }
                     Text { color: root.muted ? "#f7768e" : "#c0caf5"
                            text: "volume " + Math.round(root.volume * 100) + "%" + (root.muted ? "  [MUTED]" : "") }
@@ -594,8 +634,126 @@ in
 
                     Item { height: 1; width: 1 }
                     Text { color: "#565f89"; font.pixelSize: 11
-                           text: "esc anywhere / Super+D to close" }
+                           text: "Super+D to close" }
                 }
+            }
+        }
+
+        // ---- keybind viewer -------------------------------------------------
+        // Reads LIVE binds from `hyprctl binds -j` — always accurate, no
+        // conf-file parsing (and nothing to migrate when 0.57 goes Lua).
+        property var bindList: []
+        property bool bindsShown: false
+
+        IpcHandler {
+            function toggle() {
+                root.bindsShown = !root.bindsShown;
+                if (root.bindsShown) bindsProc.running = true;
+            }
+            target: "keybinds"
+        }
+
+        Process {
+            id: bindsProc
+            command: ["hyprctl", "binds", "-j"]
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    try {
+                        const fmt = m => {
+                            let s = [];
+                            if (m & 64) s.push("SUPER");
+                            if (m & 4)  s.push("CTRL");
+                            if (m & 8)  s.push("ALT");
+                            if (m & 1)  s.push("SHIFT");
+                            return s.length ? s.join("+") : "";
+                        };
+                        root.bindList = JSON.parse(this.text)
+                            .filter(b => b.submap === "" && b.key !== "")
+                            .map(b => ({
+                                keys: fmt(b.modmask) + " + " + b.key,
+                                action: (b.dispatcher + " " + b.arg).trim()
+                            }))
+                            .sort((a, b2) => a.keys.localeCompare(b2.keys));
+                    } catch (e) { root.bindList = []; }
+                }
+            }
+        }
+
+        PanelWindow {
+            id: bindsPanel
+            visible: root.bindsShown
+            anchors { right: true; top: true; bottom: true }
+            width: 560
+            color: "transparent"
+            // without this the panel never receives keystrokes — typed
+            // characters pass through to windows behind it
+            WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+            onVisibleChanged: if (visible) {
+                filterField.text = "";
+                bindsProc.running = true;
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 8
+                radius: 12
+                color: "#ee1a1b26"
+                border.color: "#557aa2f7"
+
+                Column {
+                    anchors.fill: parent
+                    anchors.margins: 18
+                    spacing: 12
+
+                    Text { color: "#c0caf5"; font.pixelSize: 16; font.bold: true
+                           text: "keybinds" }
+                    Rectangle { width: parent.width; height: 1; color: "#337aa2f7" }
+
+                    Rectangle {
+                        width: parent.width; height: 34; radius: 6
+                        color: "#22242036"; border.color: "#447aa2f7"
+                        TextInput {
+                            id: filterField
+                            anchors.fill: parent
+                            anchors.margins: 8
+                            color: "#c0caf5"
+                            focus: root.bindsShown
+                            Text { anchors.verticalCenter: parent.verticalCenter
+                                   color: "#565f89"; visible: filterField.text === ""
+                                   text: "filter…" }
+                        }
+                    }
+
+                    ListView {
+                        width: parent.width
+                        height: parent.height - 130
+                        clip: true
+                        spacing: 4
+                        model: root.bindList.filter(b =>
+                            b.keys.toLowerCase().includes(filterField.text.toLowerCase()) ||
+                            b.action.toLowerCase().includes(filterField.text.toLowerCase()))
+                        delegate: Rectangle {
+                            width: ListView.view.width
+                            height: 28
+                            radius: 5
+                            color: index % 2 ? "#11242036" : "transparent"
+                            Text { anchors.left: parent.left; anchors.leftMargin: 8
+                                   anchors.verticalCenter: parent.verticalCenter
+                                   color: "#7dcfff"; font.pixelSize: 12
+                                   text: modelData.keys }
+                            Text { anchors.right: parent.right; anchors.rightMargin: 8
+                                   anchors.verticalCenter: parent.verticalCenter
+                                   color: "#a9b1d6"; font.pixelSize: 12
+                                   elide: Text.ElideRight; width: 300
+                                   text: modelData.action }
+                        }
+                    }
+
+                    Text { color: "#565f89"; font.pixelSize: 11
+                           text: "type to filter · Super+/ to close" }
+                }
+
+                Keys.onEscapePressed: root.bindsShown = false
             }
         }
     }
@@ -715,38 +873,6 @@ EOF
       categories = [ "System" ];
     })
 
-    (pkgs.writeShellScriptBin "hypr-keybinds" ''
-      # Omarchy-style keybind viewer: renders every bind from the ACTIVE
-      # hyprland.conf into a floating ghostty overlay. Parsed live from the
-      # conf, so it never drifts from what's actually bound.
-      #
-      # NOTE: reads hyprlang .conf — when the Lua migration happens
-      # (see header comment) this parser must move to hyprland.lua.
-      set -eu
-
-      CONF="''${HOME}/.config/hypr/hyprland.conf"
-      SHEET="$(mktemp)"
-      trap 'rm -f "$SHEET"' EXIT
-
-      grep -E '^bind[a-z]*[[:space:]]*=' "$CONF" \
-        | sed -E \
-            -e 's/[[:space:]]+#.*$//' \
-            -e 's/^[a-z]+[[:space:]]*=[[:space:]]*//' \
-            -e 's/\$mod/SUPER/g' \
-        | awk -F', *' '
-            {
-              key = $1 "  +  " $2
-              action = $3
-              for (i = 4; i <= NF; i++) action = action ", " $i
-              printf "%-26s %s\n", key, action
-            }' \
-        | sort > "$SHEET"
-
-      exec ${pkgs.ghostty}/bin/ghostty \
-        --class=hypr-keybinds \
-        --title=hypr-keybinds \
-        -e sh -c "printf '\n KEYBINDS  (q closes)\n\n'; ${pkgs.util-linux}/bin/column -t '$SHEET' | ${pkgs.less}/bin/less"
-    '')
   ];
 
   # Route "open folder" / "open image" to thunar / swayimg by default.
