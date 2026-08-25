@@ -13,6 +13,8 @@
     font-size = 12
     font-family = DaddyTimeMono Nerd Font
     theme = TokyoNight Storm
+    # translucency — lets the compositor blur show through (decoration.blur)
+    background-opacity = 0.92
     # gtk-tabs-location = hidden
   '';
 }

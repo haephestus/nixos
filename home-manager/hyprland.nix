@@ -25,14 +25,100 @@
 {
   config,
   pkgs,
+  lib,
   ...
 }:
+
+let
+  # ══════════════════════════════════════════════════════════════════
+  #  THEME SWITCH — change this one word, rebuild, everything reskins:
+  #    "storm" | "moon" | "night"
+  # Drives: compositor borders/shadows, waybar CSS, fuzzel colors,
+  # GTK theme variant, mako notifications.
+  themeName = "storm";
+
+  tokyoNight = {
+    storm = {
+      bg = "24283b"; base = "1a1b26"; fg = "c0caf5"; dim = "565f89";
+      blue = "7aa2f7"; cyan = "7dcfff"; sel = "343a55";
+      warn = "e0af68"; err = "f7768e"; gtkTweaks = "storm"; gtkSuffix = "-Storm";
+    };
+    moon = {
+      bg = "222436"; base = "1b1d2b"; fg = "c8d3f5"; dim = "585e76";
+      blue = "8caaee"; cyan = "7dcfff"; sel = "2f334d";
+      warn = "ffc777"; err = "ff757f"; gtkTweaks = "moon"; gtkSuffix = "-Moon";
+    };
+    night = {
+      bg = "1a1b26"; base = "16161e"; fg = "c0caf5"; dim = "565f89";
+      blue = "7aa2f7"; cyan = "7dcfff"; sel = "292e42";
+      warn = "e0af68"; err = "f7768e"; gtkTweaks = ""; gtkSuffix = "";
+    };
+  }.${themeName};
+
+  # Tokyo Night GTK theme (thunar, dialogs, waypaper — all GTK apps).
+  # Built from upstream with sassc; variant follows the THEME SWITCH above.
+  tokyonight-gtk-theme = pkgs.stdenv.mkDerivation {
+    pname = "tokyonight-gtk-theme-${themeName}";
+    version = "unstable-2026";
+    src = pkgs.fetchFromGitHub {
+      owner = "Fausto-Korpsvart";
+      repo = "Tokyonight-GTK-Theme";
+      rev = "6c340e058e84c1975a038a8e5d1e384477225dc0";
+      hash = "sha256-7H2n9wTaW8Db1RejWK071ITV1j5KIuzfql0Tx9WT6zM=";
+    };
+    nativeBuildInputs = [ pkgs.sassc pkgs.glib ];
+    dontBuild = true;
+    postPatch = "patchShebangs themes/install.sh";
+    installPhase = ''
+      runHook preInstall
+      mkdir -p $out/share/themes
+      cd themes
+      ./install.sh -d $out/share/themes -n Tokyonight -c dark -t default ${
+        if tokyoNight.gtkTweaks != "" then "--tweaks ${tokyoNight.gtkTweaks}" else ""
+      }
+      runHook postInstall
+    '';
+  };
+  gtkThemeDir = "Tokyonight-Dark${tokyoNight.gtkSuffix}";
+
+  # Niri-style scroll overview, built FROM SOURCE against this exact
+  # nixpkgs Hyprland derivation (0.56.2). Upstream flake can't be used:
+  # its package has no .override and no inputs to follow, so we drive
+  # nixpkgs' own mkHyprlandPlugin directly. Pinned commit f9248ab;
+  # bump rev+hash together when updating.
+  scrolloverview = pkgs.hyprlandPlugins.mkHyprlandPlugin {
+    pluginName = "scrolloverview";
+    version = "unstable-2026-08-10";
+    src = pkgs.fetchFromGitHub {
+      owner = "yayuuu";
+      repo = "hyprland-scroll-overview";
+      rev = "f9248ab6bee770e9d68813b48cc6ca12b3271254";
+      hash = "sha256-SEa8XQtrNg90AUeZFE9+lGvYEWd0T2ht/+sKx+kWUak=";
+    };
+    meta.description = "Niri-style scroll overview plugin for Hyprland";
+    installPhase = ''
+      runHook preInstall
+      mkdir -p $out/lib
+      cp ./scrolloverview.so $out/lib/libscrolloverview.so
+      runHook postInstall
+    '';
+  };
+
+in
 
 {
   wayland.windowManager.hyprland = {
     enable = true;
     # Let HM's module handle systemd session integration
     systemd.enable = true;
+
+    # PIN the config format explicitly: newer HM defaults configType to
+    # "lua", which would silently change what `settings` generates.
+    # Flip to "lua" only as part of the deliberate 0.57 migration
+    # (see file header warning).
+    configType = "hyprlang";
+
+    plugins = [ scrolloverview ];
 
     settings = {
       # --- Multi-GPU (PRIME offload) ---
@@ -43,15 +129,13 @@
         "AQ_DRM_DEVICES,/dev/dri-gpu-intel:/dev/dri-gpu-nvidia"
       ];
 
-      # Per-display scale + arrangement knobs.
-      # Scale = last field of each line (raise to 1.25 if text reads small).
-      # Arrangement: the auto-* keyword places each screen relative to the
-      # ones declared before it — swap auto-right/auto-left to flip sides,
-      # or use explicit pixel coords ("1920x0") for precise alignment.
-      # Laptop is eDP-1, external is HDMI-A-2.
+      # Physical arrangement: external HDMI on the LEFT, laptop on the RIGHT.
+      # Positions are EXPLICIT pixel coords — the auto-left/auto-right
+      # relative keywords are unreliable in 0.56.x (silently disable the
+      # output; verified live 2026-08-24). Both panels are 1080p scale 1.
       monitor = [
-        "eDP-1,preferred,auto,1"
-        "HDMI-A-2,preferred,auto,1,auto-right"
+        "HDMI-A-2,preferred,0x0,1"
+        "eDP-1,preferred,1920x0,1"
       ];
 
       # Per-workspace layouts (Hyprland 0.54+): workspace 3 uses the
@@ -94,14 +178,7 @@
         # split control — togglesplit/swapsplit dispatchers were REMOVED in
         # Hyprland 0.54; layoutmsg is the only way now. Requires
         # general preserve_split below, or toggling does nothing.
-        # (was Super+J — J/K now do workspace up/down, COSMIC habit)
         "$mod, T, layoutmsg, togglesplit"
-
-        # keyboard window resize (repeatable)
-        "$mod SHIFT, left, resizeactive, -30 0"
-        "$mod SHIFT, right, resizeactive, 30 0"
-        "$mod SHIFT, up, resizeactive, 0 -30"
-        "$mod SHIFT, down, resizeactive, 0 30"
 
         # --- scrolling-layout controls (workspace 3) ---
         # layoutmsg is layout-scoped: these only do something on the
@@ -111,9 +188,11 @@
         "$mod, comma, layoutmsg, move -col"       # scroll tape left
         "$mod CTRL, period, layoutmsg, colresize +conf" # cycle wider preset
         "$mod CTRL, comma, layoutmsg, colresize -conf"  # cycle narrower preset
+        "$mod CTRL, H, layoutmsg, swapcol l"      # shift column left
+        "$mod CTRL, L, layoutmsg, swapcol r"      # shift column right
         "$mod, O, layoutmsg, promote"             # pop window into own column
 
-        # workspaces: numbers, plus J/K vim-style (j=down/next, k=up/prev)
+        # workspaces: numbers plus J/K (j=down/next, k=up/prev)
         "$mod, J, workspace, e+1"
         "$mod, K, workspace, e-1"
         "$mod, 1, workspace, 1"
@@ -141,6 +220,16 @@
 
         # system monitor (cpu/mem/disk/processes)
         "$mod, U, exec, $terminal -e btop"
+
+        # screenshots: Print = whole screen, Shift+S = select region
+        ", Print, exec, hypr-screenshot"
+        "$mod SHIFT, S, exec, hypr-screenshot region"
+
+        # screen recording: toggle (start / stop+save)
+        "$mod SHIFT, R, exec, hypr-record"
+
+        # workspace overview — niri-style scroll overview (plugin above)
+        "$mod, Tab, scrolloverview:overview, toggle all"
       ];
 
       # tap Super (press and release, no other key) opens the launcher —
@@ -151,6 +240,9 @@
 
       # wallpaper daemon — starts at session launch; waypaper updates its
       # conf (~/.config/hypr/hyprpaper.conf) whenever you pick a wallpaper.
+      # pyprland daemon removed — replaced by the scrolloverview plugin.
+      # hyprpaper starts here; mako does NOT (services.mako owns it as a
+      # managed user unit — starting both would fight over the socket).
       exec-once = [ "hyprpaper" ];
 
       bindm = [
@@ -159,10 +251,41 @@
       ];
 
       general = {
-        gaps_in = 5;
-        gaps_out = 10;
+        gaps_in = 6;
+        gaps_out = 12;
         border_size = 2;
         layout = "dwindle";
+        # Tokyo Night: blue→cyan gradient on focus, dim slate idle.
+        # Hyprland color format = alpha-FIRST: rgba(AARRGGBB).
+        "col.active_border" = "rgba(ee${tokyoNight.blue}) rgba(ee${tokyoNight.cyan}) 45deg";
+        "col.inactive_border" = "rgba(aa414868)";
+      };
+
+      decoration = {
+        rounding = 10;
+        active_opacity = 1.0;
+
+        # NO focus-dependent dimming — blur and opacity stay constant
+        # regardless of which window is focused (user preference).
+        inactive_opacity = 1.0;
+
+        # soft drop shadows, tinted with the palette's dark base
+        shadow = {
+          enabled = true;
+          range = 18;
+          render_power = 3;
+          color = "rgba(aa${tokyoNight.base})";
+        };
+
+        # backdrop blur behind translucent surfaces (waybar, notifications)
+        blur = {
+          enabled = true;
+          size = 6;
+          passes = 3;
+          vibrancy = 0.17;
+          brightness = 0.85;
+          noise = 0.02;
+        };
       };
 
       dwindle = {
@@ -176,8 +299,57 @@
       # and boolean rules need explicit on/off values.
       windowrule = [
         "match:class ^(hypr-keybinds)$, float on, pin on, size 980 720"
+        # NOTE: no blur rules needed — decoration.blur applies to ALL
+        # windows by default in 0.56+; per-window opt-OUT is `no_blur on`.
       ];
     };
+
+    # Resize MODE — a dedicated submap. Entered via Super+R (bind above);
+    # inside it, arrows/HJKL resize the active window, Shift = big steps,
+    # and Esc/Enter return to the default submap. Submaps are Hyprland's
+    # mechanism for keys meaning different things per mode WITHOUT overlap:
+    # binds here shadow root binds only while the mode is active.
+    #
+    # NOTE: every custom submap MUST bind its own exit — root binds are
+    # invisible while inside a submap. Foreign submaps (plugins) that
+    # forget their exit are escaped with: hyprctl dispatch submap reset
+    extraConfig = ''
+      submap = resize
+      binde = , right, resizeactive, 30 0
+      binde = , left, resizeactive, -30 0
+      binde = , up, resizeactive, 0 -30
+      binde = , down, resizeactive, 0 30
+      binde = , l, resizeactive, 30 0
+      binde = , h, resizeactive, -30 0
+      binde = , k, resizeactive, 0 -30
+      binde = , j, resizeactive, 0 30
+      binde = SHIFT, right, resizeactive, 100 0
+      binde = SHIFT, left, resizeactive, -100 0
+      binde = SHIFT, up, resizeactive, 0 -100
+      binde = SHIFT, down, resizeactive, 0 100
+      bind  = , escape, submap, reset
+      bind  = , return, submap, reset
+      submap = reset
+
+      # --- Tokyo Night rice: motion ---
+      # Animations live here (appended after settings) because beziers MUST
+      # be defined before the animations referencing them, and the generated
+      # settings order can't guarantee that.
+      bezier = overshot, 0.05, 0.9, 0.1, 1.05
+      bezier = smoothOut, 0.36, 0, 0.66, -0.56
+      bezier = smoothIn, 0.25, 1, 0.5, 1
+
+      animation = windows, 1, 5, overshot, slide
+      animation = windowsOut, 1, 4, smoothOut
+      animation = fade, 1, 6, smoothIn
+      animation = workspaces, 1, 5, smoothIn, slidefade 15%
+      # borderangle REQUIRES an explicit curve (missing 4th field = "no
+      # such bezier"). "linear" is a Hyprland built-in.
+      animation = borderangle, 1, 30, linear
+
+      # blur the bar (it's translucent; blur makes it glassy)
+      layerrule = blur on, match:namespace waybar
+    '';
   };
 
   # App launcher ($menu). Config owned here so font/scaling travel with it.
@@ -192,17 +364,93 @@
         font = "DaddyTimeMono Nerd Font:size=12";
         icon-theme = "Adwaita";
         terminal = "ghostty -e";
+        # NOTE: fuzzel colors are RRGGBBAA — alpha LAST (opposite of
+        # Hyprland's format). Don't "fix" one to match the other.
+        line-height = 22;
+        horizontal-pad = 24;
+        vertical-pad = 14;
+        inner-pad = 10;
+      };
+      border = {
+        width = 2;
+        radius = 10;
+      };
+      # fuzzel colors are RRGGBBAA — alpha LAST (opposite of Hyprland's
+      # format). Don't "fix" one to match the other.
+      colors = {
+        background = "${tokyoNight.base}f0";   # palette base, translucent
+        text = "${tokyoNight.fg}ff";
+        match = "${tokyoNight.cyan}ff";
+        selection = "${tokyoNight.sel}ff";
+        selection-text = "${tokyoNight.fg}ff";
+        selection-match = "${tokyoNight.cyan}ff";
+        border = "${tokyoNight.blue}ff";
       };
     };
   };
 
-  # DaddyTime computer-wide for GTK apps (thunar, dialogs, etc.)
+  # GTK apps (thunar, dialogs, waypaper): Tokyo Night theme + font.
+  # Theme dir name must match what the tokyonight-gtk-theme derivation
+  # above actually produces ("Tokyonight-Dark" + variant suffix).
   gtk = {
     enable = true;
+    theme = {
+      name = gtkThemeDir;
+      package = tokyonight-gtk-theme;
+    };
+    # newer HM stopped inheriting the GTK3 theme into gtk4/libadwaita —
+    # set both so every generation of app toolkit matches.
+    gtk4.theme = {
+      name = gtkThemeDir;
+      package = tokyonight-gtk-theme;
+    };
     font = {
       name = "DaddyTimeMono Nerd Font";
       package = pkgs.nerd-fonts.daddy-time-mono;
       size = 11;
+    };
+    iconTheme = {
+      name = "Adwaita";
+      package = pkgs.adwaita-icon-theme;
+    };
+    gtk3.extraCss = ''
+      /* tighten thunar up a little */
+      .thunar toolbar { padding: 2px; }
+      window { background-color: #${tokyoNight.bg}; }
+    '';
+  };
+
+  # Notifications — palette-matched.
+  # NOTE: modern HM moved all styling under settings.* with kebab-case
+  # keys mirroring mako's own config file names.
+  # Waypaper defaults — SEED-ONLY. waypaper REWRITES this file whenever
+  # you pick a wallpaper, so HM must not manage it as a link target
+  # (declarative management would clobber your runtime choice every
+  # switch, or fail like the -b backup error). We create it once if
+  # absent; afterwards waypaper owns it.
+  home.activation.seedWaypaper = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if [ ! -f "$HOME/.config/waypaper/config.ini" ]; then
+      mkdir -p "$HOME/.config/waypaper"
+      cat > "$HOME/.config/waypaper/config.ini" <<'EOF'
+[Settings]
+language = en
+folder = /home/harbinger/Pictures/tokyonight
+backend = hyprpaper
+monitor = All
+EOF
+    fi
+  '';
+
+  services.mako = {
+    enable = true;
+    settings = {
+      background-color = "#${tokyoNight.base}f0";
+      text-color = "#${tokyoNight.fg}ff";
+      border-color = "#${tokyoNight.blue}ff";
+      border-radius = 10;
+      border-size = 2;
+      default-timeout = 4000;
+      font = "DaddyTimeMono Nerd Font 11";
     };
   };
 
@@ -210,6 +458,49 @@
     wl-clipboard # wayland clipboard utilities (replaces xclip workflows)
     waypaper # wallpaper picker GUI
     hyprpaper # wallpaper daemon — waypaper writes its conf and drives it
+    grim # screenshot capture
+    slurp # region selection for screenshots
+    gpu-screen-recorder # screen recording — NOTE: wf-recorder is unusable
+                        # in this nixpkgs rev (fails to build vs ffmpeg 8)
+    mako # notification daemon (formerly implicit via COSMIC)
+
+    # Screenshot helper: `hypr-screenshot` = full screen,
+    # `hypr-screenshot region` = select area. Saves to ~/Pictures/Screenshots
+    # AND copies to clipboard.
+    (pkgs.writeShellScriptBin "hypr-screenshot" ''
+      set -eu
+
+      dir="$HOME/Pictures/Screenshots"
+      mkdir -p "$dir"
+      file="$dir/screenshot-$(date +%Y%m%d-%H%M%S).png"
+
+      if [ "''${1:-}" = "region" ]; then
+        geom="$(${pkgs.slurp}/bin/slurp)" || exit 0   # Esc = cancel
+        ${pkgs.grim}/bin/grim -g "$geom" "$file"
+      else
+        ${pkgs.grim}/bin/grim "$file"
+      fi
+
+      ${pkgs.wl-clipboard}/bin/wl-copy < "$file"
+      ${pkgs.libnotify}/bin/notify-send "Screenshot" "Saved & copied: $(basename "$file")"
+    '')
+
+    # Recording toggle: first press starts, second stops and finalizes.
+    # gpu-screen-recorder: -w screen captures all monitors, -f 60 fps,
+    # -o dir auto-names files. Add `-a default_output` for system audio.
+    (pkgs.writeShellScriptBin "hypr-record" ''
+      dir="$HOME/Videos"
+      mkdir -p "$dir"
+
+      if pgrep -x gpu-screen-recorder >/dev/null; then
+        pkill -INT -x gpu-screen-recorder   # graceful stop -> finalize
+        ${pkgs.libnotify}/bin/notify-send "Recording stopped" "saved to $dir"
+      else
+        ${pkgs.libnotify}/bin/notify-send "Recording started" "saving to $dir"
+        ${pkgs.gpu-screen-recorder}/bin/gpu-screen-recorder \
+          -w screen -f 60 -o "$dir"
+      fi
+    '')
 
     # Power actions as .desktop entries so they appear IN fuzzel — type
     # "reboot" / "shutdown" into the launcher, COSMIC-style. Works without a
@@ -364,21 +655,49 @@
     };
 
     style = ''
+      /* Tokyo Night (${themeName}) — generated from the THEME SWITCH
+         palette at the top of this file. */
       * {
         font-family: "DaddyTimeMono Nerd Font", sans-serif;
         font-size: 13px;
+        min-height: 0;
       }
       window#waybar {
-        background: rgba(20, 20, 26, 0.85);
-        color: #cdd6f4;
+        /* GTK CSS: translucency via 8-digit hex (#RRGGBBAA), NOT
+           rgba(<hex>, x) — GTK parses rgba() as DECIMAL channels only */
+        background: #${tokyoNight.base}D1;
+        color: #${tokyoNight.fg};
+        border-bottom: 1px solid #${tokyoNight.blue}59;
       }
       #workspaces button {
-        padding: 0 8px;
-        color: #6c7086;
+        padding: 0 10px;
+        margin: 3px 2px;
+        border-radius: 6px;
+        color: #${tokyoNight.dim};
+        background: transparent;
+        transition: all 0.2s ease;
       }
       #workspaces button.active,
       #workspaces button.focused {
-        color: #cdd6f4;
+        color: ${tokyoNight.base};
+        background: #${tokyoNight.blue};
+      }
+      #workspaces button:hover {
+        background: #${tokyoNight.blue}40;
+        color: #${tokyoNight.fg};
+      }
+      #cpu, #memory, #disk, #network, #battery, #pulseaudio, #tray,
+      #clock {
+        padding: 0 8px;
+        margin: 3px 2px;
+        border-radius: 6px;
+        background: #${tokyoNight.bg}A6;
+      }
+      #battery.warning {
+        color: #${tokyoNight.warn};
+      }
+      #battery.critical:not(.charging) {
+        color: #${tokyoNight.err};
       }
     '';
   };
@@ -394,6 +713,8 @@
       ExecStart = "${pkgs.hyprpolkitagent}/libexec/hyprpolkitagent";
       Restart = "on-failure";
     };
-    Install = { WantedBy = [ "graphical-session.target" ]; };
+    Install = {
+      WantedBy = [ "graphical-session.target" ];
+    };
   };
 }

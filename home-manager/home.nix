@@ -32,6 +32,9 @@
 
   nixpkgs.config.allowUnfree = true;
 
+  # NOTE: standalone HM has no backupFileExtension option — backups are
+  # CLI-only via `-b backup`. The `rehome` zsh alias includes it.
+
   # Lets Home Manager manage GTK/dconf settings for apps that use them.
   dconf.enable = true;
 
