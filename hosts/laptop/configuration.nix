@@ -10,8 +10,7 @@
     ./hardware-configuration.nix
 
     # configuration for desktop environment
-    ../../modules/desktop/hyprland.nix
-
+    ../../modules/desktop/hyprland/sys-config.nix
     # configurations for nix-ld and nix-alien
     ../../modules/tools/nix-ld.nix
 
@@ -192,40 +191,56 @@
   # live HERE; Home Manager only customizes their configs via xdg.configFile.
   # Exception: neovim — HM's lazyvim wrapper is inseparable from its config,
   # so it stays HM-owned. Do not re-add plain neovim here (duplicate).
-  environment.systemPackages = with pkgs; [
-    # dev
-    zellij
-    sqlite
-    ghostty
-    python313
-    android-tools
+  environment.systemPackages =
+    with pkgs;
+    let
+      prismlauncher = pkgs.symlinkJoin {
+        name = "prismlauncher-wrapped";
+        paths = [ pkgs.prismlauncher ];
+        nativeBuildInputs = [ pkgs.makeWrapper ]; # Use nativeBuildInputs for build tools like makeWrapper
+        postBuild = ''
+          wrapProgram $out/bin/prismlauncher \
+            --set __NV_PRIME_RENDER_OFFLOAD 1 \
+            --set __GLX_VENDOR_LIBRARY_NAME nvidia \
+            --set DRI_PRIME 1
+        '';
+      }; # Removed the extra closing parenthesis here
+    in
+    [
+      # dev
+      zellij
+      sqlite
+      ghostty
+      python313
+      android-tools
 
-    # system manager
-    gh
-    git
-    neovide
-    nix-sweep
-    home-manager
+      # system manager
+      gh
+      git
+      neovide
+      nix-sweep
+      home-manager
 
-    # misc
-    wget
-    xclip
-    brave
-    ntfs3g
-    prismlauncher
+      # misc
+      wget
+      xclip
+      brave
+      ntfs3g
+      prismlauncher
 
-    # file management (formerly implicit via COSMIC's cosmic-files)
-    thunar # file manager
-    swayimg # wayland-native image viewer
+      # file management (formerly implicit via COSMIC's cosmic-files)
+      thunar # file manager
+      swayimg # wayland-native image viewer
 
-    # desktop utilities (formerly implicit via COSMIC)
-    pavucontrol # audio device/output mixer — right-click waybar volume module
-    btop # system monitor: cpu/mem/disk/processes — Super+U
-    brightnessctl # screen backlight control — XF86MonBrightness keys
-    playerctl # playback control for MPRIS apps — XF86AudioPlay keys
-    pulseaudio # CLIENT binaries only (pactl etc.) — PipeWire stays the server;
-               # needed by scripts/tools that query audio state via pactl
-  ];
+      # desktop utilities (formerly implicit via COSMIC)
+      pavucontrol # audio device/output mixer — right-click waybar volume module
+      btop # system monitor: cpu/mem/disk/processes — Super+U
+      brightnessctl # screen backlight control — XF86MonBrightness keys
+      playerctl # playback control for MPRIS apps — XF86AudioPlay keys
+      pulseaudio
+      # CLIENT binaries only (pactl etc.) — PipeWire stays the server;
+      # needed by scripts/tools that query audio state via pactl
+    ];
 
   networking = {
     hostName = "nixos";

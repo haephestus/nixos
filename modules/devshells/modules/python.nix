@@ -70,6 +70,7 @@ let
   # nix-ld shells (python / fastapi / insight) share this base.
   baseBuildInputs = with pkgs; [
     python312
+    virtualenv
     python313Packages.pip
     gcc
     gnumake
@@ -80,34 +81,67 @@ let
   baseLDenv = {
     NIX_LD = lib.fileContents "${stdenv.cc}/nix-support/dynamic-linker";
     NIX_LD_LIBRARY_PATH = lib.makeLibraryPath [
-      stdenv.cc.cc.lib
-      openssl
-      zlib
-      pkgs.glib
+      # C/C++ runtime
+      stdenv.cc.cc.lib # libstdc++, libgcc_s
+
+      # Compression / crypto
+      zlib # libz.so.1
+      pkgs.zstd # QtCore -> libzstd.so.1
+      openssl # QtNetwork TLS (wheels do NOT bundle this)
+
+      # GLib/GTK stack (already in your list)
+      pkgs.glib # glib, gobject, gthread
+      pkgs.gtk3
+      pkgs.pango
+      pkgs.cairo
+
+      # Text rendering
+      pkgs.fontconfig # QtGui fontconfig integration
+      pkgs.freetype # QtGui freetype
+      pkgs.harfbuzz
+
+      # Input / keyboard / display
+      pkgs.libxkbcommon # provides libxkbcommon + libxkbcommon-x11
+      pkgs.wayland # wayland QPA
+      pkgs.mesa # libGL / libEGL / libGLESv2
+      pkgs.libdrm
+
+      # Network / system services
       pkgs.nss
       pkgs.nspr
       pkgs.atk
+      pkgs.at-spi2-atk
+      pkgs.at-spi2-core
       pkgs.cups
       pkgs.dbus
       pkgs.expat
-      pkgs.libdrm
+      pkgs.alsa-lib
+
+      # X11 (full set, not just the subset you had)
       pkgs.libX11
       pkgs.libXcomposite
       pkgs.libXdamage
       pkgs.libXext
       pkgs.libXfixes
+      pkgs.libXi
+      pkgs.libglvnd # libGL.so.1 / libEGL.so.1 GL dispatch
       pkgs.libXrandr
+      pkgs.libXrender
+      pkgs.libXcursor
+      pkgs.libSM
+      pkgs.libICE
       pkgs.libxcb
-      pkgs.mesa
-      pkgs.gtk3
-      pkgs.pango
-      pkgs.cairo
-      pkgs.alsa-lib
-      pkgs.at-spi2-atk
-      pkgs.at-spi2-core
+
+      # xcb utilities — Qt 6.5+ hard-requires libxcb-cursor; the rest are
+      # dlopened for window management / WM hints / EWMH
+      pkgs.xcbutil
+      pkgs.xcbutilcursor
+      pkgs.xcbutilimage
+      pkgs.xcbutilkeysyms
+      pkgs.xcbutilrenderutil
+      pkgs.xcbutilwm
     ];
   };
-
   commonShellHook = ''
     echo "Python312 dev shell"
 

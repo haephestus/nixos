@@ -12,7 +12,7 @@
     ../modules/editors/nvim/tui.nix
     # ../modules/editors/jetbrains.nix
     ../modules/ai/opencode.nix
-    ../home-manager/hyprland.nix
+    ../modules/desktop/hyprland/home-config/hyprlang_config.nix
   ];
   # Home Manager needs a bit of information about you and the paths it should
   # manage.

@@ -54,11 +54,12 @@
 
           # python development environments
           inherit (py)
+            python
             pyml # machine learning dev env
             pycerebrum # cerebrum dev env
             insight # data science dev env
             fastapi # fastapi dev env
-            pysh # general python shell
+            pyshell # general python shell
             pyfl # flask dev env
             steward # steward dev env
             ;
