@@ -9,6 +9,8 @@ ShellRoot {
     property bool shown: false
     property bool bindsShown: false
 
+    Bar {}
+
     Dashboard {
         shown: root.shown
     }
