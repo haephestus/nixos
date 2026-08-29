@@ -1,20 +1,16 @@
-
 //@ pragma UseQApplication
-
 import Quickshell
+import Quickshell.Io
 
 ShellRoot {
     id: root
 
     property bool shown: false
     property bool bindsShown: false
-
     Bar {}
-
     Dashboard {
-        shown: root.shown
+      shown: root.shown
     }
-
     Keybinds {
         shown: root.bindsShown
     }
