@@ -184,6 +184,21 @@ in
         "$mod SHIFT, J, focusmonitor, d"
         "$mod SHIFT, K, focusmonitor, u"
 
+        # --- window movement ---
+        # swap the focused window with its neighbor in the layout (dwindle)
+        "$mod SHIFT, left, swapwindow, l"
+        "$mod SHIFT, right, swapwindow, r"
+        "$mod SHIFT, up, swapwindow, u"
+        "$mod SHIFT, down, swapwindow, d"
+
+        # transfer the focused window to the adjacent monitor
+        # NB: `movetomonitor` was removed in the 0.54 dispatcher rework —
+        # plain `movewindow` now takes the direction. Verified live on 0.56.2.
+        "$mod CTRL SHIFT, left, movewindow, l"
+        "$mod CTRL SHIFT, right, movewindow, r"
+        "$mod CTRL SHIFT, up, movewindow, u"
+        "$mod CTRL SHIFT, down, movewindow, d"
+
         "$mod, T, layoutmsg, togglesplit"
         "$mod, R, submap, resize"
 

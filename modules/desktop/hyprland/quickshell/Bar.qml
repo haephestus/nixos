@@ -29,6 +29,23 @@ PanelWindow {
     property var lastCpuIdle: 0
     property var lastCpuTotal: 0
 
+    // Follow the focused monitor: park the bar on whichever output currently
+    // has focus. Verified live on Quickshell 0.3.0 — runtime setScreen works.
+    screen: Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor?.name) ?? Quickshell.screens[0]
+
+    // Passive overlay: never take keyboard focus (fixes the bar eating keys)
+    focusable: false
+
+    // Disable hot reload: 0.3.0 segfaults when a window with an explicit
+    // `screen` is reloaded (confirmed: reload -> stack trace -> crash handler
+    // relaunch). NOTE: this must live in a component file, NOT shell.qml —
+    // the root entry file's Component.onCompleted fails to compile with
+    // "Non-existent attached object" on 0.3.0. Restart quickshell manually
+    // after changing config files.
+    Component.onCompleted: {
+        Quickshell.watchFiles = false
+    }
+
     anchors.top: true
     anchors.left: true
     anchors.right: true
