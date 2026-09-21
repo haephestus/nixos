@@ -144,10 +144,16 @@ in
     plugins = [ scrolloverview ];
 
     settings = {
-      env = [ "AQ_DRM_DEVICES,/dev/dri-gpu-intel:/dev/dri-gpu-nvidia" ];
+      env = [
+        "AQ_DRM_DEVICES,/dev/dri-gpu-nvidia:/dev/dri-gpu-intel"
+      ];
+      cursor = {
+        hide_on_key_press = true;
+        # no_hardware_cursors = true; # Uncomment this line if your cursor acts glitchy on your Intel/NVIDIA hybrid setup
+      };
       monitor = [
-        "HDMI-A-2,preferred,0x0,1"
-        "eDP-1,preferred,1920x0,1"
+        "HDMI-A-2,1366x768@59.79,0x0,1"
+        "eDP-1,1920x1080@60.01,1366x0,1"
       ];
       workspace = [
         "1, layout:scrolling"
@@ -179,25 +185,25 @@ in
         "$mod, J, movefocus, d"
         "$mod, K, movefocus, u"
 
-        "$mod SHIFT, H, focusmonitor, l"
-        "$mod SHIFT, L, focusmonitor, r"
-        "$mod SHIFT, J, focusmonitor, d"
-        "$mod SHIFT, K, focusmonitor, u"
+        # "$mod SHIFT, H, focusmonitor, l"
+        # "$mod SHIFT, L, focusmonitor, r"
+        # "$mod SHIFT, J, focusmonitor, d"
+        # "$mod SHIFT, K, focusmonitor, u"
 
         # --- window movement ---
         # swap the focused window with its neighbor in the layout (dwindle)
-        "$mod SHIFT, left, swapwindow, l"
-        "$mod SHIFT, right, swapwindow, r"
-        "$mod SHIFT, up, swapwindow, u"
-        "$mod SHIFT, down, swapwindow, d"
+        "$mod SHIFT, H, swapwindow, l"
+        "$mod SHIFT, L, swapwindow, r"
+        "$mod SHIFT, K, swapwindow, u"
+        "$mod SHIFT, J, swapwindow, d"
 
         # transfer the focused window to the adjacent monitor
         # NB: `movetomonitor` was removed in the 0.54 dispatcher rework —
         # plain `movewindow` now takes the direction. Verified live on 0.56.2.
-        "$mod CTRL SHIFT, left, movewindow, l"
-        "$mod CTRL SHIFT, right, movewindow, r"
-        "$mod CTRL SHIFT, up, movewindow, u"
-        "$mod CTRL SHIFT, down, movewindow, d"
+        "$mod CTRL SHIFT, H, movewindow, l"
+        "$mod CTRL SHIFT, L, movewindow, r"
+        "$mod CTRL SHIFT, K, movewindow, u"
+        "$mod CTRL SHIFT, J, movewindow, d"
 
         "$mod, T, layoutmsg, togglesplit"
         "$mod, R, submap, resize"

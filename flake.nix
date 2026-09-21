@@ -3,6 +3,9 @@
     # Nixppkgs
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+    # Security
+    sops-nix.url = "github:Mic92/sops-nix";
+
     # Home-manager
     home-manager.url = "github:nix-community/home-manager/master";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
@@ -18,6 +21,7 @@
       nixpkgs,
       home-manager,
       lazyvim,
+      sops-nix,
       ...
     }:
     let
@@ -35,8 +39,8 @@
           inherit system;
           # main configuration file
           modules = [
-            #ngrok.nixosModules.ngrok
-            #./modules/tools/ngrok.nix
+            sops-nix.nixosModules.sops
+            ./modules/security/secrets.nix
             ./hosts/laptop/configuration.nix
           ];
         };

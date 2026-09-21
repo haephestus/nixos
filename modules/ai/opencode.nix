@@ -83,6 +83,38 @@ in
             };
           };
         };
+        freellmapi = {
+          npm = "@ai-sdk/openai-compatible";
+          name = "FreeLLMAPI";
+          options = {
+            baseURL = "http://localhost:3001/v1";
+            apiKey = "freellmapi-a23cae40f6d99b77f8f79ef3fe5a331345e20633d141cf04";
+          };
+          models = {
+            # Default auto router route
+            "auto" = { };
+
+            # Dedicated tool-calling pool using valid catalog model IDs
+            "tool-gemini" = {
+              id = "gemini-3.6-flash";
+            };
+            "tool-codestral" = {
+              id = "codestral";
+            };
+            "tool-command" = {
+              id = "command-r-2";
+            };
+            "tool-mistral-large" = {
+              id = "mistral-large-3";
+            };
+            "tool-mistral-code" = {
+              id = "mistral-code-agent";
+            };
+            "tool-devstral" = {
+              id = "devstral";
+            };
+          };
+        };
         openrouter = {
           models = {
             # Auto-routes to whichever free model fits the request. Simplest option —

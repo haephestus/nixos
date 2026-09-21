@@ -15,7 +15,7 @@
     ../../modules/tools/nix-ld.nix
 
     # configurations for distrobox
-    ../../modules/virtualization/distrobox.nix
+    ../../modules/virtualization/virtualisation.nix
 
     # nvidia drivers
     ../../modules/desktop/nvidia.nix
@@ -78,6 +78,7 @@
         "wheel"
         "uinput"
         "input"
+        "docker"
       ];
     };
   };
@@ -106,6 +107,13 @@
     # thumbnailers for Thunar's file previews
     tumbler.enable = true;
 
+    openssh = {
+      enable = true;
+      settings = {
+        PasswordAuthentication = false;
+        PermitRootLogin = "no";
+      };
+    };
     # drive/phone mounting in Thunar (Devices sidebar) — the udisks2-backed
     # virtual filesystem layer COSMIC used to provide implicitly.
     gvfs.enable = true;
@@ -230,6 +238,10 @@
 
       # file management (formerly implicit via COSMIC's cosmic-files)
       thunar # file manager
+      file-roller
+      unzip
+      zip
+      p7zip
       swayimg # wayland-native image viewer
 
       # desktop utilities (formerly implicit via COSMIC)
