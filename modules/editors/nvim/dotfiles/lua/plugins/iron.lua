@@ -53,8 +53,11 @@ return {
           -- toggle_repl_with_cmd_2 = "<space>rh",
           send_motion = "<space>is",
           visual_send = "<space>iv",
+          send_block = "<space>isb",
+          send_block_and_move = "<space>isbn"
           send_file = "<space>isf",
           send_line = "<space>isl",
+          send_paragraph = "<space>isp",
           send_mark = "<space>ism",
           mark_motion = "<space>imm",
           mark_visual = "<space>iml",
