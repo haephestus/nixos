@@ -16,6 +16,14 @@ if vim.g.neovide then
   vim.g.neovide_cursor_vfx_particle_lifetime = 1.2
   vim.g.neovide_cursor_vfx_particle_density = 14.0
   vim.g.neovide_cursor_vfx_particle_speed = 20.0
-  vim.g.neovide_cursor_animation_length = 0.13
   vim.g.neovide_cursor_trail_size = 0.8
+end
+
+-- molten.nvim (jupyter execution) needs a python host with pynvim AND
+-- jupyter_client; the distro-default host ships only pynvim. When present,
+-- use the Nix-provided one (modules/editors/nvim/tui.nix references the
+-- same env in xdg.configFile."nvim/python-host").
+local molten_python_host = vim.fn.stdpath("config") .. "/python-host"
+if vim.uv.fs_stat(molten_python_host) then
+  vim.g.python3_host_prog = molten_python_host
 end

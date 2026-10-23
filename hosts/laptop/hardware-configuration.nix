@@ -43,6 +43,29 @@
     ];
   };
 
+  # Bulk storage (internal HDD, ext4). Declared 2026-10-19 to offload the SSD root.
+  fileSystems."/mnt/nixfiles" = {
+    device = "/dev/disk/by-uuid/efecc535-23c4-4ba0-8436-b225329f5309";
+    fsType = "ext4";
+    options = [ "nofail" "x-systemd.device-timeout=10s" ];
+  };
+
+  fileSystems."/home/harbinger/.gradle" = {
+    device = "/mnt/nixfiles/home/gradle";
+    fsType = "none";
+    options = [ "bind" "x-systemd.requires-mounts-for=/mnt/nixfiles" ];
+  };
+
+  fileSystems."/home/harbinger/.local/share/PrismLauncher" = {
+    device = "/mnt/nixfiles/home/prismlauncher";
+    fsType = "none";
+    options = [ "bind" "x-systemd.requires-mounts-for=/mnt/nixfiles" ];
+  };
+
+  # Phase 2 (reclaims ~11G more): enabled by /mnt/nixfiles/scripts/migrate-opencode.sh
+  # ONLY run that script with every opencode session closed. Line stays commented until then.
+  # fileSystems."/home/harbinger/.local/share/opencode" = { device = "/mnt/nixfiles/home/opencode"; fsType = "none"; options = [ "bind" "x-systemd.requires-mounts-for=/mnt/nixfiles" ]; };
+
   swapDevices = [ { device = "/dev/disk/by-uuid/56961f56-81a3-4f6a-8bcc-bd89baddec3e"; } ];
 
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking

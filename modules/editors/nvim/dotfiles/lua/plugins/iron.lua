@@ -27,7 +27,7 @@ return {
           dap_integration = true,
           -- How the repl window will be displayed
           -- See below for more information
-          repl_open_cmd = require("iron.view").right(40),
+          repl_open_cmd = require("iron.view").right(80),
 
           -- repl_open_cmd can also be an array-style table so that multiple
           -- repl_open_commands can be given.
@@ -53,8 +53,8 @@ return {
           -- toggle_repl_with_cmd_2 = "<space>rh",
           send_motion = "<space>is",
           visual_send = "<space>iv",
-          send_block = "<space>isb",
-          send_block_and_move = "<space>isbn"
+          send_code_block = "<space>isb",
+          send_code_block_and_move = "<space>isn",
           send_file = "<space>isf",
           send_line = "<space>isl",
           send_paragraph = "<space>isp",

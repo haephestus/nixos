@@ -10,7 +10,7 @@
     ../modules/terminal/default.nix
     ../modules/editors/nvim/ide.nix
     ../modules/editors/nvim/tui.nix
-    # ../modules/editors/jetbrains.nix
+    ../modules/editors/jetbrains.nix
     ../modules/ai/opencode.nix
     ../modules/desktop/hyprland/home-config/hyprlang_config.nix
   ];
@@ -30,7 +30,20 @@
     homeDirectory = "/home/harbinger";
   };
 
-  nixpkgs.config.allowUnfree = true;
+  nixpkgs.config = {
+    allowUnfree = true;
+    # jetbrains.idea-oss 2025.3.4 is on nixpkgs' insecure list
+    # (NIXPKGS-2026-2269, multiple known CVEs; no patched build in nixpkgs yet).
+    # Both names must be permitted: the base IDE is checked when the wrapper
+    # instantiates it, and the wrapped output (jetbrains.nix bakes in Minecraft
+    # Dev / NBT / IdeaVim via nix-jetbrains-plugins, renamed to
+    # idea-oss-with-plugins-2025.3.4) carries the same knownVulnerabilities meta
+    # under its own name. The plain name also covers the unwrapped `-f` fallback.
+    permittedInsecurePackages = [
+      "idea-oss-2025.3.4"
+      "idea-oss-with-plugins-2025.3.4"
+    ];
+  };
 
   # NOTE: standalone HM has no backupFileExtension option — backups are
   # CLI-only via `-b backup`. The `rehome` zsh alias includes it.

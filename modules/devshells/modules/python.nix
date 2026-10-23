@@ -99,7 +99,6 @@ let
       pkgs.fontconfig # QtGui fontconfig integration
       pkgs.freetype # QtGui freetype
       pkgs.harfbuzz
-
       # Input / keyboard / display
       pkgs.libxkbcommon # provides libxkbcommon + libxkbcommon-x11
       pkgs.wayland # wayland QPA
@@ -302,6 +301,53 @@ in
   insight = pkgs.mkShell {
     buildInputs =
       baseBuildInputs
+      ++ (with pkgs; [
+        (texliveSmall.withPackages (
+          ps: with ps; [
+            # Core layout engines used by nbconvert
+            adjustbox
+            caption
+            collectbox
+            enumitem
+            environ
+            eurosym
+            etoolbox
+            jknapltx
+            parskip
+            pdfcol
+            pgf
+            rsfs
+            tcolorbox
+            titling
+            trimspaces
+            ucs
+            ulem
+            upquote
+
+            # Structural LaTeX macro frameworks
+            ltxcmds
+            infwarerr
+            iftex
+            kvoptions
+            kvsetkeys
+            float
+            geometry
+            amsmath
+
+            # Engine helpers and formatting packages
+            fontspec
+            unicode-math
+            fancyvrb
+            grffile
+            hyperref
+            booktabs
+            soul
+            ec
+          ]
+        ))
+        pandoc
+        pandoc
+      ])
       ++ (with pkgs.python313Packages; [
         scikit-learn
         statsmodels
@@ -311,6 +357,7 @@ in
         ipykernel
         notebook
         jupytext
+        seaborn
         pandas
         numpy
         pip

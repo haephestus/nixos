@@ -1,17 +1,43 @@
-{ pkgs, ... }:
+{
+  pkgs,
+  nix-jetbrains-plugins ? null,
+  ...
+}:
+
+let
+  # ── IDE plugins, Nix-managed ────────────────────────────────────────────────
+  # Plugin IDs come from the JetBrains Marketplace; version resolution against
+  # whatever IDEA nixpkgs ships (2025.3 line today) is handled by
+  # nix-jetbrains-plugins' lib. IDs verified in generated/ides/idea-2025.3.json.
+  pluginIds = [
+    "com.demonwav.minecraft-dev" # Minecraft Dev — Fabric/Forge/NeoForge, mixins, mappings
+    "com.github.tth05.minecraft-nbt-intellij-plugin" # NBT viewer/editor
+    "IdeaVIM" # Neovim keybindings — the .ideavimrc below is useless without this
+  ];
+
+  # With the flake input wired in (default `rehome` path), bake the plugins into
+  # the IDE. Fallback to a plain IDE if someone runs home-manager with `-f`
+  # (no extraSpecialArgs), so the module doesn't hard-fail.
+  ideaWithPlugins =
+    if nix-jetbrains-plugins != null then
+      nix-jetbrains-plugins.lib.buildIdeWithPlugins pkgs pkgs.jetbrains.idea-oss pluginIds
+    else
+      pkgs.jetbrains.idea-oss;
+in
 
 {
   # ── JetBrains IDEs ────────────────────────────────────────────────────────
   # Uncomment whichever IDEs you want. allowUnfree is already set in home.nix.
   home.packages = with pkgs; [
-    # === Free ===
-    jetbrains.idea-oss # IntelliJ IDEA Community
+    # === Free (with plugins baked in) ===
+    ideaWithPlugins # IntelliJ IDEA Community + Minecraft Dev / NBT / IdeaVim
     # jetbrains.pycharm-community  # PyCharm Community
     # jetbrains.rider-free         # Rider (free as of 2025)
 
     # === Unfree (requires nixpkgs.config.allowUnfree = true) ===
     # jetbrains.idea-ultimate
     # jetbrains.pycharm-professional
+    # jetbrains.pycharm-community
     # jetbrains.clion
     # jetbrains.webstorm
     # jetbrains.goland
@@ -20,6 +46,20 @@
     # jetbrains.phpstorm
     # jetbrains.ruby-mine
   ];
+
+  # ── Stable JDK paths for IntelliJ project SDKs ─────────────────────────────
+  # IntelliJ cannot see /nix/store JDKs and the store paths change on every
+  # nixpkgs bump, killing saved project SDK configs. These stable symlinks
+  # (~/.jdks is IntelliJ's own convention for JDK homes) survive bumps and match
+  # the devshells' declared environments (modules/devshells/modules/java.nix):
+  #   Minecraft 1.20.1 → mc_1_20_1 shell → JAVA_HOME_17 → ~/.jdks/jdk17
+  #   Minecraft 1.21+   → mc_latest shell → JAVA_HOME_21 → ~/.jdks/jdk21
+  # In the IDE per project: Project Structure → SDKs → Add JDK → the path above,
+  # then set Gradle JVM to the same JDK.
+  home.file = {
+    ".jdks/jdk17".source = "${pkgs.openjdk17}";
+    ".jdks/jdk21".source = "${pkgs.openjdk21}";
+  };
 
   # ── shared.vim ────────────────────────────────────────────────────────────
   # Sourced by BOTH init.lua and IdeaVim.
@@ -85,8 +125,8 @@
   '';
 
   # ── IdeaVim configuration ─────────────────────────────────────────────────
-  # IdeaVim must be installed from the JetBrains Plugin Marketplace first:
-  #   Settings → Plugins → Marketplace → search "IdeaVim" → Install
+  # IdeaVim is baked into the IDE via nix-jetbrains-plugins (see `pluginIds`
+  # above) — no manual Marketplace install needed.
   #
   # shared.vim is symlinked into the Nix store by Home Manager.
   # IdeaVim follows symlinks so `source` works transparently.

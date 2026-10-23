@@ -114,6 +114,7 @@ let
       rev = "f9248ab6bee770e9d68813b48cc6ca12b3271254";
       hash = "sha256-SEa8XQtrNg90AUeZFE9+lGvYEWd0T2ht/+sKx+kWUak=";
     };
+    enableParallelBuilding = false;
     meta.description = "Niri-style scroll overview plugin for Hyprland";
     installPhase = ''
       runHook preInstall

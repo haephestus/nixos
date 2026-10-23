@@ -133,6 +133,7 @@ let
           echo "    LOMBOK_JAR=$LOMBOK_JAR"
           echo "    JDTLS_BUNDLES_DIR=$JDTLS_BUNDLES_DIR  (nvim-dap/java-debug bundles)"
           echo "    Launch the IDE from here with: idea-oss   (inherits this env)"
+          echo "    IntelliJ SDKs: ~/.jdks/jdk17 (1.20.1) | ~/.jdks/jdk21 (1.21+) — Project SDK + Gradle JVM"
         '';
       }
       // ldFor graphicsLibs

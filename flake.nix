@@ -13,6 +13,9 @@
     # lazyvim
     lazyvim.url = "github:pfassina/lazyvim-nix/v15.15.0"; # Pin to v15.13.0
 
+    # JetBrains IDE plugins, Nix-managed (Minecraft Dev, …)
+    nix-jetbrains-plugins.url = "github:nix-community/nix-jetbrains-plugins";
+
   };
 
   outputs =
@@ -22,6 +25,7 @@
       home-manager,
       lazyvim,
       sops-nix,
+      nix-jetbrains-plugins,
       ...
     }:
     let
@@ -54,6 +58,7 @@
           # home-manager configuration file
           extraSpecialArgs = {
             lazyvim = lazyvim;
+            nix-jetbrains-plugins = nix-jetbrains-plugins;
           };
 
           modules = [

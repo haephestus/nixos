@@ -43,15 +43,63 @@
       vi = "nvim";
       ll = "ls -l";
 
-      # rebuild system and home manager
+      # ── Build / switch ────────────────────────────────────────────
       rebuild = "sudo nixos-rebuild switch --flake /etc/nixos#harbinger";
-      upgrade = "sudo nixos-rebuild switch --flake /etc/nixos#harbinger --upgrade";
       test-build = "sudo nixos-rebuild build --flake /etc/nixos#harbinger";
+      dry-build = "sudo nixos-rebuild dry-activate --flake /etc/nixos#harbinger";
       rehome = "nix run home-manager/master -- switch -b backup --flake /etc/nixos#harbinger";
       rollback = "sudo nixos-rebuild switch --rollback --flake /etc/nixos#harbinger";
+
+      # --upgrade does nothing with flakes, so update the lock file first
+      upgrade = "sudo nix flake update --flake /etc/nixos && sudo nixos-rebuild switch --flake /etc/nixos#harbinger";
+
+      # ── Inspect disk usage ────────────────────────────────────────
+      disk = "df -h / /boot";
+      big-dirs = "sudo du -xh --max-depth=1 / 2>/dev/null | sort -h | tail -15";
+      home-big = "du -h --max-depth=1 ~ 2>/dev/null | sort -h | tail -15";
+      store-size = "du -sh /nix/store";
+      store-top = "nix path-info -rSh /run/current-system | sort -hk2 | tail -25";
+      gc-roots = "nix-store --gc --print-roots | grep -v -e '/proc/' -e '{memory}' -e '{censored}'";
+      journal-size = "journalctl --disk-usage";
+
+      # ── Generations ───────────────────────────────────────────────
       list-system = "sudo nix-env -p /nix/var/nix/profiles/system --list-generations";
-      delete-system = "sudo nix-env -p /nix/var/nix/profiles/system --delete-generations";
-      garbage = "sudo nix-collect-garbage";
+      list-home = "home-manager generations 2>/dev/null || nix-env --list-generations";
+      sys-diff = "nix store diff-closures /run/booted-system /run/current-system";
+      keep-5 = "sudo nix-env -p /nix/var/nix/profiles/system --delete-generations +5 && sudo /run/current-system/bin/switch-to-configuration boot";
+      delete-system = "sudo nix-env -p /nix/var/nix/profiles/system --delete-generations"; # usage: delete-system 12 13 14
+
+      # ── Cleanup ───────────────────────────────────────────────────
+      # Safe: keep the last 7 days of generations, vacuum logs, refresh boot entries
+      clean = "sudo nix-collect-garbage --delete-older-than 7d && nix-collect-garbage --delete-older-than 7d && sudo journalctl --vacuum-time=7d && sudo /run/current-system/bin/switch-to-configuration boot";
+
+      # Aggressive: delete ALL old generations (you lose rollback), keeps only the current one
+      clean-all = "sudo nix-collect-garbage -d && nix-collect-garbage -d && sudo journalctl --vacuum-size=200M && sudo /run/current-system/bin/switch-to-configuration boot";
+
+      garbage = "sudo nix-collect-garbage && nix-collect-garbage";
+      optimise = "nix store optimise"; # dedupe the store; slow the first time
+      docker-clean = "docker system prune -af --volumes";
+      cache-clean = "rm -rf ~/.cache/* 2>/dev/null; echo done";
+
+      # ── Cleanup (nix-sweep) ───────────────────────────────────────
+      # See what would be removed, no changes made
+      sweep-dry = "sudo nix-sweep cleanout --dry-run --keep-min 5 --keep-newer 7 --gc system && nix-sweep cleanout --dry-run --keep-min 5 --keep-newer 7 user home";
+
+      # Normal cleanup: keep at least 5 generations and anything from the last 7 days
+      sweep = "sudo nix-sweep cleanout --keep-min 5 --keep-newer 7 --gc system && nix-sweep cleanout --keep-min 5 --keep-newer 7 --gc user home && sudo /run/current-system/bin/switch-to-configuration boot";
+
+      # Aggressive: keep only the 2 newest generations, regardless of age
+      sweep-hard = "sudo nix-sweep cleanout --keep-min 2 --keep-newer 1 --gc system && nix-sweep cleanout --keep-min 2 --keep-newer 1 --gc user home && sudo /run/current-system/bin/switch-to-configuration boot";
+
+      # Interactive: pick generations yourself
+      sweep-pick = "sudo nix-sweep cleanout --interactive --gc system && nix-sweep cleanout --interactive --gc user home";
+
+      # GC roots (result symlinks, old direnv envs, etc.)
+      sweep-roots = "nix-sweep gc-roots";
+      sweep-roots-rm = "nix-sweep gc-roots --interactive";
+
+      # Overview of what's taking space
+      sweep-info = "nix-sweep generations system user home";
 
     };
 
@@ -78,7 +126,7 @@
 
   # zellij tab-completions, generated at BUILD time into fpath.
   # Regenerated automatically whenever the zellij version changes.
-  xdg.dataFile."zsh/site-functions/_zellij".source =
-    pkgs.runCommand "_zellij" { nativeBuildInputs = [ pkgs.zellij ]; }
-      "${pkgs.zellij}/bin/zellij setup --generate-completion zsh > $out";
+  xdg.dataFile."zsh/site-functions/_zellij".source = pkgs.runCommand "_zellij" {
+    nativeBuildInputs = [ pkgs.zellij ];
+  } "${pkgs.zellij}/bin/zellij setup --generate-completion zsh > $out";
 }

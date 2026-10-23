@@ -93,10 +93,10 @@
 
   # Cap the systemd journal so logs can't fill the disk (was growing to ~2 GiB).
   services = {
-    journald.extraConfig = ''
-      SystemMaxUse=200M
-      MaxRetentionSec=30d
-    '';
+    journald.settings.Journal = {
+      SystemMaxUse = "200M";
+      MaxRetentionSec = "30d";
+    };
     udev.extraRules = ''
       KERNEL=="uinput", GROUP="uinput", MODE="0660"
     '';
