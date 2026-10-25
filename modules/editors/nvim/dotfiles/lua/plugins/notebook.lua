@@ -71,6 +71,48 @@ return {
         comment = "nil",
       },
     },
+    config = function(_, opts)
+      -- Anchor fix for molten output placement. NN's builtin molten repl
+      -- (lua/notebook-navigator/repls.lua) evaluates with
+      -- `MoltenEvaluateRange(start_line, end_line + 1)`, so molten's span end
+      -- (which is also the output anchor; outputs render as virt_lines BELOW
+      -- that line) sits on the line right after the cell's last line. With
+      -- two adjacent cells that line is the next cell's `# %%` marker, so the
+      -- previous cell's output shows up inside the following block.
+      -- Evaluating with the 4-arg form instead anchors the span end at the
+      -- END COLUMN of the last cell line: the code sent to the kernel is
+      -- identical (CodeCell.get_text trims at the end column). NN's EOF
+      -- trailing-marker guard stays: molten still needs output room below
+      -- the last cell.
+      --
+      -- Can't patch the `repls` table directly: the module returns only its
+      -- dispatch closure, the table is module-local. Swap the module value
+      -- instead — every consumer of `get_repl("molten")` (our gate keys,
+      -- hydra's sticky mode, run_cells_below) gets the fixed repl, and every
+      -- other provider falls through to the untouched original.
+      local inner = require("notebook-navigator.repls")
+      package.loaded["notebook-navigator.repls"] = function(provider)
+        if provider ~= "molten" then
+          return inner(provider)
+        end
+        return function(start_line, end_line, _repl_args, cell_marker)
+          local line_count = vim.api.nvim_buf_line_count(0)
+          -- NN's EOF guard: molten gets room for output below the last cell.
+          if line_count < (end_line + 1) then
+            vim.api.nvim_buf_set_lines(0, end_line + 1, end_line + 1, false, { cell_marker, "" })
+          end
+
+          local last_line = vim.api.nvim_buf_get_lines(0, end_line - 1, end_line, true)[1] or ""
+          local ok, _ = pcall(vim.fn.MoltenEvaluateRange, start_line, end_line, 1, #last_line + 1)
+          if not ok then
+            vim.cmd("MoltenInit")
+            return false
+          end
+          return true
+        end
+      end
+      require("notebook-navigator").setup(opts)
+    end,
   },
   {
     -- Cells as a mini.ai text object `h`: `vih`, `dah`, `yih`, `gch`, ... and

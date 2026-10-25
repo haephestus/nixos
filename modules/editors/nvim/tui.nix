@@ -24,6 +24,22 @@ let
     ps.nbformat
     ps.pillow
   ]);
+
+  # The rplugin host python must NOT inherit the project devshell's
+  # PYTHONPATH / LD_LIBRARY_PATH: PYTHONPATH makes jupyter_client resolve to
+  # the devshell's single-package store copies (mixed versions vs this env's
+  # own), and LD_LIBRARY_PATH outranks the RUNPATH pinned on this env's
+  # compiled extensions — with the devshell's libexpat (gtk toolchain) in
+  # front, pyexpat dies with "undefined symbol: XML_SetHashSalt16Bytes" on
+  # the first kernelspec lookup inside molten.
+  # The KERNEL still needs the devshell's module path; molten.lua bakes it
+  # into the kernelspec (kernel.json "env", merged over the launch env by
+  # jupyter_client's provisioner), so nothing is lost.
+  pythonHostWrapper = pkgs.writeScript "nvim-python-host" ''
+    #!${pkgs.stdenv.shell}
+    unset PYTHONPATH LD_LIBRARY_PATH
+    exec ${pythonHost}/bin/python3 "$@"
+  '';
 in
 {
   # magick luarock: LuaJIT + FFI binding around libMagickWand, required by
@@ -121,5 +137,13 @@ in
 
   # Dotfiles-side reveal: options.lua points g:python3_host_prog here
   # (guarded by fs_stat there) once this file exists.
-  xdg.configFile."nvim/python-host".source = "${pythonHost}/bin/python3";
+  xdg.configFile."nvim/python-host".source = pythonHostWrapper;
+
+  # The lazyvim-nix file scanner only copies categories keymaps/options/
+  # autocmds plus files under plugins/ (nix/lib/file-scanning.nix) — plain
+  # library modules are silently dropped. Deploy them directly; these are
+  # required at runtime by notebook.lua (cell gate) and molten's export
+  # comparison respectively.
+  xdg.configFile."nvim/lua/molten/gate.lua".source = ./dotfiles/lua/molten/gate.lua;
+  xdg.configFile."nvim/lua/remove_comments.lua".source = ./dotfiles/lua/remove_comments.lua;
 }

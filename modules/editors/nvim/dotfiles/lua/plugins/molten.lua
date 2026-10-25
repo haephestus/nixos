@@ -59,6 +59,10 @@ return {
       -- when explicitly entered via <space>Mo
       vim.g.molten_auto_open_output = false
       vim.g.molten_virt_text_output = true
+      -- One <space>Mo press opens AND enters the output float. The default
+      -- ("open_then_enter") needs two presses and leaves focus in the main
+      -- buffer, which looks like a broken window.
+      vim.g.molten_enter_output_behavior = "open_and_enter"
       vim.g.molten_wrap_output = true
       -- inline images are placed by image.nvim (see plugins/image.lua);
       -- without that plugin loaded molten falls back to text placeholders
@@ -158,9 +162,50 @@ return {
           and vim.fn.fnamemodify(host_prog, ":h") == vim.fn.fnamemodify(exepath, ":h")
 
         if exepath ~= "" and not is_host_python then
-          local proj_kernel = vim.fn.fnamemodify(env_root, ":t") .. "-" .. kernel
-          if not vim.list_contains(vim.fn.MoltenAvailableKernels(), proj_kernel) then
-            local out = vim.fn.system({
+          -- don't double-prefix: a pair that ran through this function before
+          -- already carries the env basename in its kernelspec name
+          local base = vim.fn.fnamemodify(env_root, ":t")
+          local proj_kernel = kernel:sub(1, #base + 1) == (base .. "-") and kernel or (base .. "-" .. kernel)
+          -- The kernel process is spawned by the host python, whose env is
+          -- stripped (see pythonHostWrapper in tui.nix), so the devshell's
+          -- python module path is baked into the kernelspec below —
+          -- jupyter_client merges kernel.json "env" over os.environ at
+          -- spawn. LD_LIBRARY_PATH is deliberately NOT baked in: the
+          -- devshell's lib dirs (expat etc.) would shadow the project
+          -- python's pinned closure and break pyexpat inside the kernel,
+          -- and every .so the kernel loads is RUNPATH-pinned anyway.
+          local pypath = vim.env.PYTHONPATH
+          local has_pypath = type(pypath) == "string" and pypath ~= ""
+          local available = vim.fn.MoltenAvailableKernels()
+          local need_register = not vim.list_contains(available, proj_kernel)
+          local had_spec = not need_register
+          -- one-time migration: specs registered before env baking (or from
+          -- a shell without devshell exports) lack the env stanza the
+          -- stripped host env now requires — re-register with --force
+          if had_spec and has_pypath then
+            local ks_dir = (
+              vim.env.JUPYTER_DATA_DIR and vim.env.JUPYTER_DATA_DIR ~= ""
+                and vim.env.JUPYTER_DATA_DIR
+              or vim.fn.stdpath("data") .. "/jupyter"
+            ) .. "/kernels/" .. proj_kernel
+            local f = io.open(ks_dir .. "/kernel.json", "r")
+            if not f then
+              need_register = true
+            else
+              local okj, jdata = pcall(vim.json.decode, f:read("a"))
+              f:close()
+              if not okj
+                or not jdata
+                or type(jdata.env) ~= "table"
+                or type(jdata.env.PYTHONPATH) ~= "string"
+                or jdata.env.PYTHONPATH == ""
+              then
+                need_register = true
+              end
+            end
+          end
+          if need_register then
+            local args = {
               exepath,
               "-m",
               "ipykernel",
@@ -170,7 +215,16 @@ return {
               proj_kernel,
               "--display-name",
               proj_kernel,
-            })
+            }
+            if has_pypath then
+              vim.list_extend(args, { "--env", "PYTHONPATH", pypath })
+            end
+            -- `ipykernel install` has no --force (that's jupyter's
+            -- kernelspec CLI); delete the stale spec directory instead
+            if had_spec then
+              vim.fn.delete(ks_dir, "rf")
+            end
+            local out = vim.fn.system(args)
             if vim.v.shell_error ~= 0 then
               vim.notify(("[molten] kernelspec install failed: %s"):format(out), vim.log.levels.WARN)
             else
